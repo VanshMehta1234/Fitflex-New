@@ -230,8 +230,8 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
           })}
         </nav>
         
-        {/* Logout Button Section */}
-        <div className="p-4 border-t border-border">
+        {/* Logout Button Section - Make sure it's visible at the bottom */}
+        <div className="p-4 border-t border-border mt-auto">
           {/* Logout button */}
           <Button
             variant="ghost"

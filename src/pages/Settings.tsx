@@ -15,6 +15,7 @@ import {
   Phone,
   Moon,
   Sun,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
@@ -24,10 +25,22 @@ import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
 import { Input } from "../components/ui/input";
 import { Avatar, AvatarImage } from "../components/ui/avatar";
 import toast from "react-hot-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
 
 const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Appearance settings
   const [fontSize, setFontSize] = useState("medium");
@@ -97,6 +110,20 @@ const Settings: React.FC = () => {
     }
 
     toast.success("Setting updated successfully");
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { error } = await deleteAccount();
+      if (error) {
+        toast.error(`Failed to delete account: ${error.message}`);
+      }
+    } catch (error: any) {
+      toast.error(`An error occurred: ${error.message}`);
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   return (
@@ -484,14 +511,6 @@ const Settings: React.FC = () => {
                   </Label>
                   <div className="rounded-lg border border-input bg-background p-4">
                     <div className="flex justify-between items-center">
-                      <span className="font-medium">Change Password</span>
-                      <Button size="sm" variant="outline">
-                        Update
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-input bg-background p-4">
-                    <div className="flex justify-between items-center">
                       <span className="font-medium">
                         Two-Factor Authentication
                       </span>
@@ -592,9 +611,36 @@ const Settings: React.FC = () => {
                           Permanently delete your account and data
                         </p>
                       </div>
-                      <Button size="sm" variant="destructive">
-                        Delete
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive">
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <AlertTriangle className="h-5 w-5 text-destructive" />
+                              Delete Account
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. Your account and all associated data will be permanently deleted.
+                              <br /><br />
+                              Are you sure you want to continue?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDeleteAccount}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deletingAccount}
+                            >
+                              {deletingAccount ? "Deleting..." : "Delete Account"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </div>

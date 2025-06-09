@@ -34,6 +34,8 @@ import {
 } from "../components/ui/tabs";
 import { useFeedback, WeeklyFeedbackData } from "../context/FeedbackContext";
 import toast from "react-hot-toast";
+import { cn } from "../lib/utils";
+import React from "react";
 
 // Categories for the weekly feedback
 const FEEDBACK_CATEGORIES = [
@@ -211,20 +213,22 @@ export default function WeeklyFeedback() {
 
   const StarRating = ({ value, onChange }: { value: number, onChange: (value: number) => void }) => {
     return (
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
             type="button"
             onClick={() => onChange(star)}
-            className={`p-1 focus:outline-none focus:ring-0`}
+            className="p-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full transition-all"
+            aria-label={`Rate ${star} out of 5`}
           >
             <Star 
-              className={`h-6 w-6 ${
+              className={cn(
+                "h-7 w-7 sm:h-8 sm:w-8 transition-all",
                 star <= value 
-                  ? 'text-yellow-500 fill-yellow-500' 
-                  : 'text-gray-300 dark:text-gray-600'
-              }`} 
+                  ? "text-yellow-500 fill-yellow-500" 
+                  : "text-gray-300 dark:text-gray-600 hover:text-yellow-400"
+              )}
             />
           </button>
         ))}
@@ -291,10 +295,10 @@ export default function WeeklyFeedback() {
 
   return (
     <MainLayout>
-      <div className="container px-4 py-6 max-w-3xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <MessageSquare className="h-6 w-6 text-primary" />
+      <div className="container px-4 py-6 max-w-4xl mx-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-12 w-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
+            <MessageSquare className="h-6 w-6 text-primary-600 dark:text-primary-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Weekly Feedback</h1>
@@ -303,132 +307,161 @@ export default function WeeklyFeedback() {
             </p>
           </div>
         </div>
-
+        
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center">
+              <CalendarDays className="h-5 w-5 mr-2 text-primary-600 dark:text-primary-400" />
+              <CardTitle>Week {currentWeek} Feedback</CardTitle>
+            </div>
+            <CardDescription>
+              Your feedback directly impacts our service improvements and helps us serve you better.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+        
         {isLoading ? (
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-8 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-6 w-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Skeleton className="h-[200px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
+          </div>
         ) : (
           <>
-            <div className="mb-6">
-              <Alert>
-                <CalendarDays className="h-4 w-4" />
-                <AlertTitle>Week {currentWeek} Feedback</AlertTitle>
-                <AlertDescription>
-                  Your feedback directly impacts our service improvements and helps us serve you better.
-                </AlertDescription>
-              </Alert>
+            {/* Custom tabs UI that looks better on mobile */}
+            <div className="mb-6 overflow-x-auto no-scrollbar">
+              <div className="flex w-full border-b dark:border-gray-800">
+                {FEEDBACK_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={cn(
+                      "flex-1 flex flex-col items-center justify-center py-3 px-1 min-w-[80px] transition-colors relative",
+                      activeCategory === category.id
+                        ? "text-primary border-b-2 border-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center mb-1",
+                      activeCategory === category.id
+                        ? "bg-primary/10"
+                        : "bg-muted"
+                    )}>
+                      {React.cloneElement(category.icon, {
+                        className: cn(
+                          "h-5 w-5",
+                          activeCategory === category.id
+                            ? "text-primary"
+                            : "text-muted-foreground"
+                        )
+                      })}
+                    </div>
+                    <span className="text-xs font-medium truncate max-w-[90px]">{category.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-              <TabsList className="grid grid-cols-2 md:grid-cols-4 mb-6">
-                {FEEDBACK_CATEGORIES.map((category) => (
-                  <TabsTrigger key={category.id} value={category.id} className="flex items-center">
-                    {category.icon}
-                    <span className="hidden sm:inline">{category.name}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
+            {/* Category content */}
+            <div className="space-y-6">
               {FEEDBACK_CATEGORIES.map((category) => (
-                <TabsContent key={category.id} value={category.id} className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center text-lg">
-                        {category.icon}
-                        {category.name}
-                      </CardTitle>
+                <div
+                  key={category.id}
+                  className={activeCategory === category.id ? "block" : "hidden"}
+                >
+                  <Card className="shadow-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center">
+                        {React.cloneElement(category.icon, { className: "h-5 w-5 mr-2 text-primary" })}
+                        <CardTitle>{category.name}</CardTitle>
+                      </div>
                       <CardDescription>{category.description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      {Object.entries(category.questions).map(([key, question]) => (
-                        <div key={key} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label htmlFor={key} className="text-sm md:text-base font-medium">
-                              {question}
-                            </Label>
-                            <StarRating 
-                              value={ratings[category.id][key]} 
-                              onChange={(value) => handleRatingChange(category.id, key, value)} 
+                    <CardContent>
+                      <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2">
+                        {Object.entries(category.questions).map(([key, question]) => (
+                          <div key={key} className="space-y-2 p-3 rounded-lg border bg-card">
+                            <div className="flex justify-between items-baseline">
+                              <Label htmlFor={key} className="font-medium">
+                                {question}
+                              </Label>
+                              <span className="text-sm text-muted-foreground font-medium">
+                                {ratings[category.id][key] > 0 ? `${ratings[category.id][key]}/5` : "Not rated"}
+                              </span>
+                            </div>
+                            <StarRating
+                              value={ratings[category.id][key]}
+                              onChange={(value) =>
+                                handleRatingChange(category.id, key, value)
+                              }
                             />
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-lg">Additional Comments</CardTitle>
-                        <CardDescription>
-                          Please share any other thoughts or suggestions you have
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <Textarea
-                          placeholder="We'd love to hear more details about your experience..."
-                          rows={4}
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                        />
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="anonymous"
-                            checked={isAnonymous}
-                            onCheckedChange={setIsAnonymous}
-                          />
-                          <Label htmlFor="anonymous" className="text-sm">
-                            Submit anonymously
-                          </Label>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Button
-                          variant="outline"
-                          onClick={handlePrevCategory}
-                          disabled={submitting || activeCategory === FEEDBACK_CATEGORIES[0].id}
-                        >
-                          Previous
-                        </Button>
-                        <div className="flex space-x-2">
-                        <Button 
-                          onClick={handleSubmit} 
-                          disabled={submitting || !hasAnyRating}
-                        >
-                          {submitting ? (
-                            <>
-                              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                              Submitting...
-                            </>
-                          ) : (
-                            'Submit Feedback'
-                          )}
-                        </Button>
-                        <Button
-                          onClick={handleNextCategory}
-                          className="gap-2"
-                          disabled={submitting || activeCategory === FEEDBACK_CATEGORIES[FEEDBACK_CATEGORIES.length - 1].id}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                        </div>
-                      </CardFooter>
-                    </Card>
-                </TabsContent>
+                </div>
               ))}
-            </Tabs>
+              
+              {/* Comments section - always visible */}
+              <Card className="mt-6 shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base flex items-center">
+                    <MessageSquare className="h-4 w-4 mr-2 text-primary" />
+                    Additional Comments
+                  </CardTitle>
+                  <CardDescription>
+                    Share any additional thoughts or suggestions with us
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="Your comments here..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="min-h-[120px] resize-none"
+                  />
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Switch
+                      id="anonymous"
+                      checked={isAnonymous}
+                      onCheckedChange={setIsAnonymous}
+                    />
+                    <Label htmlFor="anonymous">Submit anonymously</Label>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col sm:flex-row sm:justify-between gap-4 border-t pt-6 px-6">
+                  <Button
+                    variant="outline"
+                    onClick={handlePrevCategory}
+                    disabled={FEEDBACK_CATEGORIES[0].id === activeCategory}
+                    className="w-full sm:w-auto"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    {FEEDBACK_CATEGORIES[FEEDBACK_CATEGORIES.length - 1].id !== activeCategory && (
+                      <Button
+                        onClick={handleNextCategory}
+                        className="flex-1 sm:flex-none"
+                      >
+                        Next
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant={FEEDBACK_CATEGORIES[FEEDBACK_CATEGORIES.length - 1].id === activeCategory ? "default" : "outline"}
+                      disabled={submitting || !hasAnyRating}
+                      onClick={handleSubmit}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {submitting ? "Submitting..." : "Submit Feedback"}
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            </div>
           </>
         )}
       </div>

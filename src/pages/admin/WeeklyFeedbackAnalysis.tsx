@@ -439,9 +439,9 @@ const WeeklyFeedbackAnalysis = () => {
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
@@ -455,7 +455,7 @@ const WeeklyFeedbackAnalysis = () => {
           </Select>
           
           <Select value={weekFilter} onValueChange={setWeekFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Filter by week" />
             </SelectTrigger>
             <SelectContent>
@@ -470,7 +470,7 @@ const WeeklyFeedbackAnalysis = () => {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1">
                 <Filter className="h-4 w-4" />
                 Sort
                 <ChevronDown className="h-4 w-4" />
@@ -613,16 +613,24 @@ const WeeklyFeedbackAnalysis = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview" className="flex items-center">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="individual" className="flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Individual Feedback
-            </TabsTrigger>
-          </TabsList>
+          <div className="border-b border-border overflow-x-auto no-scrollbar">
+            <TabsList className="mb-0 w-full rounded-none bg-transparent flex p-0 h-auto">
+              <TabsTrigger 
+                value="overview" 
+                className="flex flex-col items-center justify-center py-3 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none h-16"
+              >
+                <BarChart3 className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="individual" 
+                className="flex flex-col items-center justify-center py-3 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none h-16"
+              >
+                <Users className="h-5 w-5 mb-1" />
+                <span className="text-xs font-medium">Individual</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="overview">
             <OverviewTab />

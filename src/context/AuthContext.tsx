@@ -31,6 +31,7 @@ type AuthContextType = {
   resetPassword: (email: string) => Promise<{ error: any }>;
   updateProfile: (profileData: ProfileUpdateData) => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: any }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -267,6 +268,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const deleteAccount = async () => {
+    if (!user) {
+      toast.error('You must be logged in to delete your account');
+      return { error: new Error('User not authenticated') };
+    }
+    
+    try {
+      const loadingToast = toast.loading('Deleting account...');
+      
+      // Delete the user's profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id);
+        
+      if (profileError) {
+        toast.dismiss(loadingToast);
+        toast.error('Failed to delete profile data');
+        return { error: profileError };
+      }
+      
+      // Sign out the user
+      const { error: signOutError } = await supabase.auth.signOut();
+      
+      if (signOutError) {
+        toast.dismiss(loadingToast);
+        toast.error('Failed to sign out');
+        return { error: signOutError };
+      }
+      
+      toast.dismiss(loadingToast);
+      toast.success('Account data deleted and signed out successfully');
+      return { error: null };
+    } catch (error: any) {
+      toast.error(error.message || 'An error occurred while deleting your account');
+      console.error('Error deleting account:', error);
+      return { error };
+    }
+  };
+
   const value = {
     session,
     user,
@@ -277,7 +318,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     resetPassword,
     updateProfile,
-    refreshUserProfile
+    refreshUserProfile,
+    deleteAccount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

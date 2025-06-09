@@ -31,7 +31,7 @@ const getRankIcon = (rank: number) => {
     case 3:
       return <Award className="h-5 w-5 text-amber-700" />;
     default:
-      return <span className="font-semibold text-gray-700 dark:text-gray-300">{rank}</span>;
+      return <span className="font-semibold text-gray-700 dark:text-gray-300"></span>;
   }
 };
 

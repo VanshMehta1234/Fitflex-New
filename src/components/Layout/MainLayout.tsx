@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { getInitials } from '../../lib/profileService';
 import { Sidebar } from './Sidebar';
-import { Menu, ChevronLeft, Moon, Sun, Home, User } from 'lucide-react';
+import { Menu, ChevronLeft, Moon, Sun, Home, User, LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -134,25 +134,15 @@ export function MainLayout({ children }: MainLayoutProps) {
         </header>
         
         {/* Main content area with scrolling */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pb-16 md:pb-0">
           {children}
         </main>
         
         {/* Mobile bottom navigation */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-card z-10">
-          <div className="flex justify-around h-16 items-center px-4">
+          <div className="flex justify-evenly h-16 items-center px-2">
             <button 
-              className="flex flex-col items-center justify-center w-16 py-1"
-              onClick={() => navigate('/home')}
-            >
-              <span className="p-1 rounded-full bg-primary/10">
-                <ChevronLeft className="h-5 w-5 text-primary" />
-              </span>
-              <span className="text-xs mt-1 text-muted-foreground">Back</span>
-            </button>
-            
-            <button 
-              className="flex flex-col items-center justify-center w-16 py-1"
+              className="flex flex-col items-center justify-center py-1 flex-1"
               onClick={() => navigate('/home')}
             >
               <span className="p-1 rounded-full bg-primary/10">
@@ -162,13 +152,23 @@ export function MainLayout({ children }: MainLayoutProps) {
             </button>
             
             <button 
-              className="flex flex-col items-center justify-center w-16 py-1"
+              className="flex flex-col items-center justify-center py-1 flex-1"
               onClick={() => navigate('/profile')}
             >
               <span className="p-1 rounded-full bg-primary/10">
                 <User className="h-5 w-5 text-primary" />
               </span>
               <span className="text-xs mt-1 text-muted-foreground">Profile</span>
+            </button>
+            
+            <button 
+              className="flex flex-col items-center justify-center py-1 flex-1"
+              onClick={handleLogout}
+            >
+              <span className="p-1 rounded-full bg-destructive/10">
+                <LogOut className="h-5 w-5 text-destructive" />
+              </span>
+              <span className="text-xs mt-1 text-muted-foreground">Logout</span>
             </button>
           </div>
         </div>

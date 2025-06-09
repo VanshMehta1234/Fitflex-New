@@ -28,11 +28,12 @@ import {
   Shield,
   Trophy,
   Clock,
-  ChevronLeft
+  ChevronLeft,
+  LogOut
 } from 'lucide-react';
 
 export default function Profile() {
-  const { user, updateProfile, userRole } = useAuth();
+  const { user, updateProfile, userRole, signOut } = useAuth();
   const { userXp, userLevel } = useXp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('info');
@@ -162,6 +163,16 @@ export default function Profile() {
       toast.error(error.message || 'Failed to upload image. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+  
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+      toast.error('Failed to log out. Please try again.');
     }
   };
   
@@ -697,6 +708,18 @@ export default function Profile() {
                       <span>Only download apps from official app stores</span>
                     </li>
                   </ul>
+                </div>
+                
+                {/* Logout Button */}
+                <div className="mt-6">
+                  <Button 
+                    variant="destructive" 
+                    className="w-full flex items-center justify-center"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </Button>
                 </div>
               </CardContent>
             </Card>
