@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MainLayout } from "../components/Layout/MainLayout";
+import { PageHeader, PageContainer } from "../components/Layout";
 import { useAuth } from "../context/AuthContext";
 import { useReferral } from "../context/ReferralContext";
 import { useXp } from "../context/XpContext";
@@ -38,13 +39,14 @@ import {
   Clock, 
   AlertCircle 
 } from "lucide-react";
+import { supabase } from "../supabase";
 
 export default function Refer() {
   const [copied, setCopied] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [redeemerProfiles, setRedeemerProfiles] = useState<{[key: string]: {name: string}}>({});
+  const [redeemerProfiles, setRedeemerProfiles] = useState<any[]>([]);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -89,25 +91,30 @@ export default function Refer() {
 
   // Fetch profile information for redeemers
   useEffect(() => {
-    // This would usually fetch profiles from the database
-    // For simplicity, we'll use what we have in the redemptions
-    const profiles: {[key: string]: {name: string}} = {};
-    referralRedemptions.forEach(redemption => {
-      if (redemption.redeemer?.name) {
-        profiles[redemption.redeemer_id] = { 
-          name: redemption.redeemer.name 
-        };
-      }
-    });
-    setRedeemerProfiles(profiles);
+    const fetchProfiles = async () => {
+      const profiles = await getProfiles();
+      setRedeemerProfiles(profiles);
+    };
+    fetchProfiles();
   }, [referralRedemptions]);
 
+  async function getProfiles() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*');
+
+      if (error) {
+        console.error('Error fetching profiles:', error);
+        return [];
+      }
+      return data || [];
+  }
   // Calculate referral stats
   const completedReferrals = referralRedemptions.filter(r => r.reward_given);
   
   // Get XP earned specifically from referrals
   const referralXp = xpTransactions
-    .filter(tx => tx.source === 'referral_bonus')
+    .filter(tx => tx.source === 'referral_bonus' || tx.source === 'referral_redemption')
     .reduce((total, tx) => total + tx.amount, 0);
   
   // If we don't have transactions yet, estimate based on redemptions
@@ -141,7 +148,8 @@ export default function Refer() {
 
   // Get redeemer name
   const getRedeemerName = (redeemerId: string): string => {
-    return redeemerProfiles[redeemerId]?.name || 'Anonymous User';
+    const profile = redeemerProfiles.find(p => p.id === redeemerId);
+    return profile?.name || 'Anonymous User';
   };
 
   // Handle copying referral code
@@ -231,28 +239,32 @@ export default function Refer() {
 
   return (
     <MainLayout>
-      <div className="container px-4 py-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Refer & Earn</h1>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                Refreshing...
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <span className="h-4 w-4 mr-2">↻</span>
-                Refresh
-              </span>
-            )}
-          </Button>
-        </div>
+      <PageContainer>
+        <PageHeader
+          title="Refer & Earn"
+          description="Share your referral code with friends and earn rewards"
+          icon={Share2}
+          actions={
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center">
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                  Refreshing...
+                </span>
+              ) : (
+                <span className="flex items-center">
+                  <span className="h-4 w-4 mr-2">↻</span>
+                  Refresh
+                </span>
+              )}
+            </Button>
+          }
+        />
         
         <div className="grid gap-6 md:grid-cols-2">
           {/* Referral Code Card */}
@@ -422,8 +434,8 @@ export default function Refer() {
                             {getRedeemerName(redemption.redeemer_id)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {redemption.redeemed_at ? 
-                              format(parseISO(redemption.redeemed_at), 'MMM d, yyyy') :
+                            {redemption.created_at ? 
+                              format(parseISO(redemption.created_at), 'MMM d, yyyy') :
                               'Recently'}
                           </p>
                         </div>
@@ -486,7 +498,7 @@ export default function Refer() {
             </Card>
           </div>
         </div>
-      </div>
+      </PageContainer>
       
       {/* Redeem Code Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

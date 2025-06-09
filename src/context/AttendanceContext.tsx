@@ -8,6 +8,7 @@ interface AttendanceContextType {
   lastCheckIn: string | null;
   loading: boolean;
   streak: number;
+  longestStreak: number;
   handleCheckIn: () => Promise<void>;
   refreshAttendance: () => Promise<void>;
 }
@@ -19,6 +20,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [lastCheckIn, setLastCheckIn] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
   const { user } = useAuth();
 
   const checkStatus = async () => {
@@ -34,9 +36,13 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setLastCheckIn(todayCheckIn.check_in_time);
       }
       
-      // Get streak
-      const currentStreak = await attendanceService.getAttendanceStreak(user.id);
+      // Get current streak
+      const currentStreak = await attendanceService.getCurrentStreak(user.id);
       setStreak(currentStreak);
+      
+      // Get longest streak
+      const maxStreak = await attendanceService.getLongestStreak(user.id);
+      setLongestStreak(maxStreak);
     } catch (error) {
       console.error("Error checking attendance status:", error);
     } finally {
@@ -72,10 +78,28 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
         setCheckedIn(true);
         setLastCheckIn(result.check_in_time);
         
-        const newStreak = await attendanceService.getAttendanceStreak(user.id);
-        setStreak(newStreak);
-        
-        toast.success(`Checked in successfully! Current streak: ${newStreak} days`);
+        // Get updated streak information
+        if (result.is_streak_day) {
+          const newStreak = result.streak_count || 0;
+          setStreak(newStreak);
+          
+          if (newStreak > longestStreak) {
+            setLongestStreak(newStreak);
+          }
+          
+          // Show different messages based on streak
+          if (newStreak >= 10) {
+            toast.success(`Amazing! ${newStreak}-day streak! 🔥🔥🔥`);
+          } else if (newStreak >= 5) {
+            toast.success(`Great job! ${newStreak}-day streak! 🔥🔥`);
+          } else if (newStreak > 1) {
+            toast.success(`Checked in successfully! ${newStreak}-day streak! 🔥`);
+          } else {
+            toast.success("Checked in successfully! First day of your streak!");
+          }
+        } else {
+          toast.success("Checked in again today!");
+        }
       } else {
         toast.error("Check-in failed. Please try again.");
       }
@@ -93,6 +117,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       lastCheckIn, 
       loading, 
       streak,
+      longestStreak,
       handleCheckIn,
       refreshAttendance
     }}>

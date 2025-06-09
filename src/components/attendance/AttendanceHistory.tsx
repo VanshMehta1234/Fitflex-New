@@ -3,7 +3,8 @@ import { Card, CardContent, CardTitle } from "../ui/card";
 import { useAuth } from "../../context/AuthContext";
 import { attendanceService, Attendance } from "../../lib/attendanceService";
 import { format } from "date-fns";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Flame, AlertCircle } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 export const AttendanceHistory: React.FC = () => {
   const [history, setHistory] = useState<Attendance[]>([]);
@@ -47,6 +48,30 @@ export const AttendanceHistory: React.FC = () => {
             <span>{formattedTime}</span>
           </div>
         </div>
+        
+        <div className="flex justify-between items-center mt-2 ml-6">
+          {item.streak_count && item.is_streak_day && (
+            <Badge 
+              variant="outline" 
+              className={`flex items-center ${item.streak_count >= 7 ? 'text-orange-500 border-orange-200 dark:border-orange-800' : ''}`}
+            >
+              <Flame className="h-3 w-3 mr-1" />
+              Day {item.streak_count} of streak
+            </Badge>
+          )}
+          
+          {item.streak_broken && (
+            <Badge variant="outline" className="flex items-center text-red-500 border-red-200 dark:border-red-800">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Streak reset
+            </Badge>
+          )}
+          
+          {!item.is_streak_day && !item.streak_broken && (
+            <span className="text-xs text-gray-400">Additional check-in</span>
+          )}
+        </div>
+        
         {item.notes && (
           <p className="text-sm text-gray-500 mt-1 ml-6">{item.notes}</p>
         )}

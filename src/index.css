@@ -2,9 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Light mode variables */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+
+  /* Scrollbar colors */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+}
+
+.dark {
+  /* Dark mode variables with improved colors */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 6.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 6.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 50.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 20.5%;
+  --input: 217.2 32.6% 20.5%;
+  --ring: 224.3 76.3% 48%;
+
+  /* Scrollbar colors */
+  --scrollbar-track: #1a1f2e;
+  --scrollbar-thumb: #3a4257;
+  --scrollbar-thumb-hover: #4a5673;
+}
+
 @layer base {
   body {
-    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
+    @apply bg-background text-foreground transition-colors duration-200;
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -31,44 +88,43 @@
 
 @layer components {
   .input-field {
-    @apply w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 
-    focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 transition-all duration-200;
+    @apply w-full px-4 py-3 rounded-lg border border-input bg-background
+    focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200;
   }
   
   .auth-button {
-    @apply w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 
-    text-white font-medium rounded-lg transition-all duration-200 
-    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900
+    @apply w-full py-3 px-4 bg-primary text-primary-foreground hover:bg-primary/90 
+    font-medium rounded-lg transition-all duration-200 
+    focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-background
     disabled:opacity-70 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
   }
   
   .toggle-button {
-    @apply absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-500 dark:text-gray-400 
-    hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 
-    focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200;
+    @apply absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground
+    hover:bg-muted hover:text-foreground
+    focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200;
   }
   
   .link {
-    @apply text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 
-    hover:underline font-medium transition-all duration-200;
+    @apply text-primary hover:text-primary/80 hover:underline font-medium transition-all duration-200;
   }
   
   .form-label {
-    @apply block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300;
+    @apply block mb-2 text-sm font-medium text-foreground;
   }
   
   .auth-card {
-    @apply w-full max-w-md mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-xl p-8 
-    border border-gray-200 dark:border-gray-700 transition-all duration-300 animate-fade-in relative;
+    @apply w-full max-w-md mx-auto bg-card text-card-foreground rounded-xl shadow-xl p-8 
+    border border-border transition-all duration-300 animate-fade-in relative;
   }
   
   .form-error {
-    @apply text-sm text-red-600 dark:text-red-400 mt-1;
+    @apply text-sm text-destructive mt-1;
   }
   
   .alert-error {
-    @apply p-3 mb-4 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 
-    rounded-lg border-l-4 border-red-500 text-sm;
+    @apply p-3 mb-4 bg-destructive/10 text-destructive
+    rounded-lg border-l-4 border-destructive text-sm;
   }
   
   .alert-success {
@@ -86,7 +142,7 @@
   }
   
   .modal-content {
-    @apply relative z-[10000] w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 m-4;
+    @apply relative z-[10000] w-full max-w-md bg-card text-card-foreground rounded-lg shadow-xl p-6 m-4;
   }
   
   /* Animation classes */
@@ -101,8 +157,34 @@
   
   /* Password toggle button */
   .password-toggle-button {
-    @apply absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 
-    hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200
-    p-1 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500;
+    @apply absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground
+    hover:text-foreground transition-colors duration-200
+    p-1 rounded-md focus:outline-none focus:ring-1 focus:ring-primary;
+  }
+  
+  /* Custom scrollbar styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  /* Firefox scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
 }

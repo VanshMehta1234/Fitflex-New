@@ -9,6 +9,7 @@ import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Progress } from "../components/ui/progress";
 import { MainLayout } from "../components/Layout/MainLayout";
+import { PageContainer } from "../components/Layout";
 import { ClassCancelModal } from "../components/ClassCancelModal";
 import { 
   Calendar as CalendarIcon, 
@@ -121,31 +122,35 @@ export default function ClassDetails() {
   
   if (isLoading) {
     return (
-      <div className="container px-4 py-10 max-w-4xl mx-auto">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          <span className="ml-3">Loading class details...</span>
-        </div>
-      </div>
+      <MainLayout>
+        <PageContainer>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+            <span className="ml-3">Loading class details...</span>
+          </div>
+        </PageContainer>
+      </MainLayout>
     );
   }
   
   if (error || !classData) {
     return (
-      <div className="container px-4 py-10 max-w-4xl mx-auto">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <h3 className="text-xl font-medium mb-2">Class Not Found</h3>
-            <p className="text-gray-500 text-center max-w-md mb-6">
-              {error || "The class you're looking for could not be found."}
-            </p>
-            <Button onClick={() => navigate('/classes')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Classes
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <MainLayout>
+        <PageContainer>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <h3 className="text-xl font-medium mb-2">Class Not Found</h3>
+              <p className="text-gray-500 text-center max-w-md mb-6">
+                {error || "The class you're looking for could not be found."}
+              </p>
+              <Button onClick={() => navigate('/classes')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Classes
+              </Button>
+            </CardContent>
+          </Card>
+        </PageContainer>
+      </MainLayout>
     );
   }
   
@@ -155,7 +160,7 @@ export default function ClassDetails() {
   
   return (
     <MainLayout>
-      <div className="container px-4 py-10 max-w-4xl mx-auto">
+      <PageContainer>
         <Button
           variant="outline"
           className="mb-6"
@@ -324,7 +329,7 @@ export default function ClassDetails() {
           selectedClass={classData}
           onCancelBooking={handleCancelBooking}
         />
-      </div>
+      </PageContainer>
     </MainLayout>
   );
 } 

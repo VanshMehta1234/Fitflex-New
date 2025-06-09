@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Avatar } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { 
@@ -29,6 +30,7 @@ interface SidebarProps {
 
 export function Sidebar({ isMobile = false }: SidebarProps) {
   const { user, userRole, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(!isMobile);
@@ -39,7 +41,29 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
   };
   
   const menuItems = [
-    {
+    ...(userRole === 'admin' ? [
+      {
+        icon: BarChart,
+        label: 'Admin',
+        path: '/admin',
+      },
+      {
+        icon: CalendarCheck,
+        label: 'Weekly Feedback Analysis',
+        path: '/admin/weekly-feedback',
+      },
+      {
+        icon: CalendarCheck,
+        label: 'User Attendance',
+        path: '/admin/user-attendance',
+      },
+      {
+        icon: Dumbbell,
+        label: 'Manage Classes',
+        path: '/admin/classes',
+      }
+    ] : [
+      {
       icon: Home,
       label: 'Dashboard',
       path: '/home',
@@ -83,29 +107,8 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       icon: CreditCard,
       label: 'Membership',
       path: '/membership',
-    },
-    ...(userRole === 'admin' ? [
-      {
-        icon: BarChart,
-        label: 'Admin',
-        path: '/admin',
-      },
-      {
-        icon: CalendarCheck,
-        label: 'Weekly Feedback Analysis',
-        path: '/admin/weekly-feedback',
-      },
-      {
-        icon: CalendarCheck,
-        label: 'User Attendance',
-        path: '/admin/user-attendance',
-      },
-      {
-        icon: Dumbbell,
-        label: 'Manage Classes',
-        path: '/admin/classes',
-      }
-    ] : []),
+    }
+    ]),
     {
       icon: Settings,
       label: 'Settings',
@@ -142,8 +145,8 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-full overflow-y-auto transition-all duration-300 ease-in-out",
-          isMobile ? "fixed inset-y-0 left-0 z-50 w-[280px] shadow-xl" : "w-[280px] sticky top-0",
+          "flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 h-screen transition-all duration-300 ease-in-out",
+          isMobile ? "fixed inset-y-0 left-0 z-50 w-[280px] shadow-xl" : "w-[280px]",
           isMobile && !isOpen && "-translate-x-full"
         )}
       >
@@ -194,8 +197,8 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
           </div>
         </div>
         
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        {/* Navigation - with its own scrollbar */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -222,8 +225,9 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
           })}
         </nav>
         
-        {/* Logout button */}
+        {/* Logout Button Section */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          {/* Logout button */}
           <Button
             variant="outline"
             className="w-full flex items-center justify-center text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800/30 dark:hover:bg-red-900/20"

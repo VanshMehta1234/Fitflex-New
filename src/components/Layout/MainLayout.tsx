@@ -65,9 +65,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-hidden">
       {/* Sidebar - only visible on larger screens by default */}
-      <div className={cn("hidden md:block")}>
+      <div className={cn("hidden md:block h-screen sticky top-0")}>
         <Sidebar />
       </div>
       
@@ -77,7 +77,21 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
       
       {/* Main content */}
-      <div className="flex flex-col flex-1 w-full">
+      <div className="flex flex-col flex-1 w-full h-screen overflow-hidden">
+        {/* Desktop Header with Theme Toggle - Only visible on desktop */}
+        <header className="hidden md:flex h-16 items-center justify-end px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-4">
+            <ThemeToggle variant="ghost" />
+            <Avatar
+              src={user?.profileImage}
+              alt={user?.name || user?.email?.split('@')[0] || 'User'}
+              size="sm"
+              className="border border-gray-200 dark:border-gray-700 cursor-pointer"
+              onClick={() => navigate('/profile')}
+            />
+          </div>
+        </header>
+        
         {/* Mobile Header - conditionally show/hide */}
         <header 
           className={cn(
@@ -95,17 +109,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             
             <div className="flex items-center gap-2">
               {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="h-5 w-5 text-gray-400" />
-                ) : (
-                  <Moon className="h-5 w-5 text-gray-600" />
-                )}
-              </button>
+              <ThemeToggle variant="ghost" />
               
               {/* User Avatar */}
               <Avatar
@@ -119,8 +123,8 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </header>
         
-        {/* Main content area */}
-        <main className="flex-1 md:pl-0">
+        {/* Main content area with scrolling */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {children}
         </main>
         
@@ -163,6 +167,14 @@ export function MainLayout({ children }: MainLayoutProps) {
               <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">Profile</span>
             </button>
           </div>
+        </div>
+        
+        {/* Floating theme toggle for mobile */}
+        <div className="md:hidden fixed bottom-20 right-4 z-20">
+          <ThemeToggle 
+            variant="default" 
+            className="rounded-full shadow-lg w-12 h-12 flex items-center justify-center" 
+          />
         </div>
       </div>
     </div>

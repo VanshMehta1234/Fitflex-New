@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useXp } from '../context/XpContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { MainLayout } from '../components/Layout/MainLayout';
+import { PageContainer } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
@@ -71,7 +72,7 @@ export default function Home() {
   
   return (
     <MainLayout>
-      <div className="px-4 py-6 md:px-6 md:py-8 max-w-full md:max-w-[calc(100vw-280px)]">
+      <PageContainer fullWidth>
         {/* Welcome section with account stats */}
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">
@@ -255,7 +256,7 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageContainer>
     </MainLayout>
   );
 } 

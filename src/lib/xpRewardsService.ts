@@ -18,14 +18,14 @@ export const XP_REWARDS = {
   PROFILE_COMPLETION: 40,
   
   // Referral-related rewards
-  REFERRAL_SENT: 15,
-  REFERRAL_SIGNUP: 100,
+  REFERRAL_SENT: 50,
+  REFERRAL_SIGNUP: 500,
   
   // Feedback-related rewards
-  WEEKLY_FEEDBACK_SUBMISSION: 25,
+  WEEKLY_FEEDBACK_SUBMISSION: 50,
   
   // Social rewards
-  SHARE_ON_SOCIAL: 20,
+  SHARE_ON_SOCIAL: 50,
   
   // Achievement-related rewards
   ACHIEVEMENT_UNLOCKED: 50,

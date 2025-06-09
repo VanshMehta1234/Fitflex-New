@@ -21,7 +21,7 @@ export interface ReferralRedemption {
   id: string;
   referral_id: string;
   redeemer_id: string;
-  redeemed_at: string;
+  created_at: string;
   reward_given: boolean;
   redeemer?: {
     name: string;

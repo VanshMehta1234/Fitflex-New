@@ -1,5 +1,6 @@
 import React from 'react';
 import { MainLayout } from '../components/Layout/MainLayout';
+import { PageHeader, PageContainer } from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { useXp } from '../context/XpContext';
 import { XP_REWARDS } from '../lib/xpRewardsService';
@@ -156,14 +157,12 @@ export default function XpRewards() {
   
   return (
     <MainLayout>
-      <div className="px-4 py-6 md:px-6 md:py-8 max-w-full md:max-w-[calc(100vw-280px)]">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">XP Rewards</h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Discover all the ways to earn experience points and level up
-          </p>
-        </div>
+      <PageContainer fullWidth>
+        <PageHeader
+          title="XP Rewards"
+          description="Discover all the ways to earn experience points and level up"
+          icon={Star}
+        />
         
         {/* Current XP Status */}
         <Card className="mb-6 overflow-hidden border-2 border-primary-100 dark:border-primary-900/20">
@@ -421,7 +420,7 @@ export default function XpRewards() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </PageContainer>
     </MainLayout>
   );
 } 

@@ -7,34 +7,102 @@ export type Attendance = {
   check_in_time: string;
   notes?: string;
   created_at: string;
+  streak_count?: number;
+  is_streak_day?: boolean;
+  streak_broken?: boolean;
 };
 
 const attendanceService = {
   // Check in a user
   async checkIn(userId: string, notes?: string): Promise<Attendance | null> {
     try {
-      // First get the user's streak count from their profile
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('streak')
-        .eq('id', userId)
-        .single();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      if (userError) {
-        console.error('Error fetching user streak:', userError);
-        // Continue with check-in anyway
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      
+      // Check if there was a check-in yesterday
+      const { data: yesterdayData, error: yesterdayError } = await supabase
+        .from('attendance')
+        .select('check_in_time, streak_count')
+        .eq('user_id', userId)
+        .gte('check_in_time', yesterday.toISOString())
+        .lt('check_in_time', today.toISOString())
+        .order('check_in_time', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (yesterdayError && yesterdayError.code !== 'PGRST116') {
+        console.error('Error checking yesterday\'s attendance:', yesterdayError);
       }
       
-      const currentStreak = userData?.streak || 0;
+      // Get the most recent check-in regardless of date to determine streak
+      const { data: lastCheckIn, error: lastCheckInError } = await supabase
+        .from('attendance')
+        .select('check_in_time, streak_count')
+        .eq('user_id', userId)
+        .order('check_in_time', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (lastCheckInError && lastCheckInError.code !== 'PGRST116') {
+        console.error('Error fetching last check-in:', lastCheckInError);
+      }
       
-      // Insert the attendance record
+      // Calculate streak and streak status
+      let newStreak = 1; // Default to 1 for first check-in or broken streak
+      let isStreakDay = true;
+      let streakBroken = false;
+      
+      if (yesterdayData) {
+        // If checked in yesterday, increment streak
+        newStreak = (yesterdayData.streak_count || 0) + 1;
+      } else if (lastCheckIn) {
+        // No check-in yesterday, but have previous check-ins
+        const lastCheckInDate = new Date(lastCheckIn.check_in_time);
+        const diffTime = today.getTime() - lastCheckInDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) {
+          // Checked in day before yesterday (still counts as streak)
+          newStreak = (lastCheckIn.streak_count || 0) + 1;
+        } else {
+          // Streak broken (more than 1 day gap)
+          newStreak = 1;
+          streakBroken = true;
+        }
+      }
+      
+      // Check if already checked in today
+      const { data: todayCheck, error: todayCheckError } = await supabase
+        .from('attendance')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('check_in_time', today.toISOString())
+        .limit(1);
+        
+      if (todayCheckError) {
+        console.error('Error checking today\'s attendance:', todayCheckError);
+      }
+      
+      // If already checked in today, this doesn't count as a streak day
+      if (todayCheck && todayCheck.length > 0) {
+        isStreakDay = false;
+      }
+      
+      // Insert the attendance record with streak information
       const { data, error } = await supabase
         .from('attendance')
         .insert([
           {
             user_id: userId,
             check_in_time: new Date().toISOString(),
-            notes
+            notes,
+            streak_count: newStreak,
+            is_streak_day: isStreakDay,
+            streak_broken: streakBroken
           },
         ])
         .select()
@@ -45,62 +113,10 @@ const attendanceService = {
         return null;
       }
       
-      // Calculate new streak based on whether the user had a check-in yesterday
-      let newStreak = currentStreak + 1;
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-      
-      const dayBefore = new Date();
-      dayBefore.setDate(dayBefore.getDate() - 2);
-      dayBefore.setHours(0, 0, 0, 0);
-      
-      // Check if there was a check-in yesterday
-      const { data: yesterdayData, error: yesterdayError } = await supabase
-        .from('attendance')
-        .select('check_in_time')
-        .eq('user_id', userId)
-        .gte('check_in_time', yesterday.toISOString())
-        .lt('check_in_time', new Date().toISOString())
-        .order('check_in_time', { ascending: false });
-        
-      if (yesterdayError) {
-        console.error('Error checking yesterday\'s attendance:', yesterdayError);
+      // Award XP for the check-in if it's a streak day
+      if (isStreakDay) {
+        await awardCheckInXp(userId, newStreak);
       }
-      
-      // If no check-in yesterday, check if it's been more than 2 days since last check-in
-      if (!yesterdayData || yesterdayData.length === 0) {
-        // Check if there was a check-in the day before yesterday
-        const { data: dayBeforeData, error: dayBeforeError } = await supabase
-          .from('attendance')
-          .select('check_in_time')
-          .eq('user_id', userId)
-          .gte('check_in_time', dayBefore.toISOString())
-          .lt('check_in_time', yesterday.toISOString())
-          .order('check_in_time', { ascending: false });
-          
-        if (dayBeforeError) {
-          console.error('Error checking day before\'s attendance:', dayBeforeError);
-        }
-        
-        // If no check-in in the last 2 days, reset streak
-        if (!dayBeforeData || dayBeforeData.length === 0) {
-          newStreak = 1; // Reset to 1 for today's check-in
-        }
-      }
-      
-      // Update the user's streak in their profile
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ streak: newStreak })
-        .eq('id', userId);
-        
-      if (updateError) {
-        console.error('Error updating streak:', updateError);
-      }
-      
-      // Award XP for the check-in
-      await awardCheckInXp(userId, newStreak);
 
       return data;
     } catch (error) {
@@ -149,43 +165,42 @@ const attendanceService = {
     return data || null;
   },
 
-  // Get user's attendance streak
-  async getAttendanceStreak(userId: string): Promise<number> {
+  // Get user's current attendance streak
+  async getCurrentStreak(userId: string): Promise<number> {
     const { data, error } = await supabase
       .from('attendance')
-      .select('check_in_time')
+      .select('streak_count')
       .eq('user_id', userId)
-      .order('check_in_time', { ascending: false });
+      .eq('is_streak_day', true)
+      .order('check_in_time', { ascending: false })
+      .limit(1)
+      .single();
 
-    if (error) {
-      console.error('Error fetching attendance for streak:', error);
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching current streak:', error);
       return 0;
     }
 
-    if (!data || data.length === 0) {
+    return data?.streak_count || 0;
+  },
+
+  // Get user's longest streak
+  async getLongestStreak(userId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('streak_count')
+      .eq('user_id', userId)
+      .eq('is_streak_day', true)
+      .order('streak_count', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching longest streak:', error);
       return 0;
     }
 
-    // Calculate streak
-    let streak = 1;
-    let currentDate = new Date(data[0].check_in_time);
-    
-    for (let i = 1; i < data.length; i++) {
-      const prevDate = new Date(data[i].check_in_time);
-      
-      // Check if consecutive days
-      const diffTime = currentDate.getTime() - prevDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === 1) {
-        streak++;
-        currentDate = prevDate;
-      } else if (diffDays > 1) {
-        break;
-      }
-    }
-
-    return streak;
+    return data?.streak_count || 0;
   },
 
   // Get all user attendance for a specific month (for admin)

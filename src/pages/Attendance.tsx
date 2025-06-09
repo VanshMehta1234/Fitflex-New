@@ -7,6 +7,7 @@ import { AttendanceHistory } from "../components/attendance/AttendanceHistory";
 import { AttendanceProvider } from "../context/AttendanceContext";
 import { Card, CardContent } from "../components/ui/card";
 import { MainLayout } from "../components/Layout/MainLayout";
+import { PageHeader, PageContainer } from "../components/Layout";
 
 const Attendance: React.FC = () => {
   const [activeTab, setActiveTab] = useState("today");
@@ -14,18 +15,12 @@ const Attendance: React.FC = () => {
   return (
     <MainLayout>
       <AttendanceProvider>
-        <div className="container px-4 py-6 max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <CalendarClock className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Attendance</h1>
-              <p className="text-sm text-muted-foreground">
-                Track your gym check-ins and attendance streak
-              </p>
-            </div>
-          </div>
+        <PageContainer>
+          <PageHeader
+            title="Attendance"
+            description="Track your gym check-ins and attendance streak"
+            icon={CalendarClock}
+          />
           
           <div className="grid gap-6 md:grid-cols-2">
             {/* Summary and Check-in section */}
@@ -76,7 +71,7 @@ const Attendance: React.FC = () => {
               </Tabs>
             </div>
           </div>
-        </div>
+        </PageContainer>
       </AttendanceProvider>
     </MainLayout>
   );
