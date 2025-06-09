@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  resolvedTheme: 'light' | 'dark'; // The actual theme after resolving system preference
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,41 +15,17 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>('system');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
-  
-  // Handle system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    // Set initial resolved theme
-    const updateResolvedTheme = () => {
-      if (theme === 'system') {
-        setResolvedTheme(mediaQuery.matches ? 'dark' : 'light');
-      } else {
-        setResolvedTheme(theme as 'light' | 'dark');
-      }
-    };
-    
-    updateResolvedTheme();
-    
-    // Listen for changes to system preference
-    const handleChange = () => {
-      if (theme === 'system') {
-        setResolvedTheme(mediaQuery.matches ? 'dark' : 'light');
-      }
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  const [theme, setTheme] = useState<Theme>('light');
   
   // Initialize theme from localStorage or system preference
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme') as Theme | null;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    if (storedTheme) {
+    if (storedTheme === 'light' || storedTheme === 'dark') {
       setTheme(storedTheme);
+    } else if (prefersDark) {
+      setTheme('dark');
     }
   }, []);
   
@@ -58,32 +33,23 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     localStorage.setItem('theme', theme);
     
-    // Apply the resolved theme to the document
-    if (resolvedTheme === 'dark') {
+    if (theme === 'dark') {
       document.documentElement.classList.add('dark');
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.setAttribute('data-theme', 'light');
     }
-  }, [theme, resolvedTheme]);
+  }, [theme]);
   
   const toggleTheme = () => {
-    setTheme(prevTheme => {
-      switch (prevTheme) {
-        case 'light': return 'dark';
-        case 'dark': return 'system';
-        case 'system': return 'light';
-        default: return 'light';
-      }
-    });
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
   
   const value = {
     theme,
     setTheme,
-    toggleTheme,
-    resolvedTheme
+    toggleTheme
   };
   
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

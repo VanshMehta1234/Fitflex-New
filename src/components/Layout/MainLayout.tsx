@@ -7,7 +7,7 @@ import { Button } from '../ui/button';
 import { Avatar } from '../ui/avatar';
 import { getInitials } from '../../lib/profileService';
 import { Sidebar } from './Sidebar';
-import { Menu, ChevronLeft, Moon, Sun } from 'lucide-react';
+import { Menu, ChevronLeft, Moon, Sun, Home, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface MainLayoutProps {
@@ -65,7 +65,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground transition-colors duration-200 overflow-hidden">
       {/* Sidebar - only visible on larger screens by default */}
       <div className={cn("hidden md:block h-screen sticky top-0")}>
         <Sidebar />
@@ -79,14 +79,13 @@ export function MainLayout({ children }: MainLayoutProps) {
       {/* Main content */}
       <div className="flex flex-col flex-1 w-full h-screen overflow-hidden">
         {/* Desktop Header with Theme Toggle - Only visible on desktop */}
-        <header className="hidden md:flex h-16 items-center justify-end px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+        <header className="hidden md:flex h-16 items-center justify-end px-6 border-b border-border bg-card">
           <div className="flex items-center gap-4">
             <ThemeToggle variant="ghost" />
             <Avatar
               src={user?.profileImage}
               alt={user?.name || user?.email?.split('@')[0] || 'User'}
-              size="sm"
-              className="border border-gray-200 dark:border-gray-700 cursor-pointer"
+              className="border border-border cursor-pointer"
               onClick={() => navigate('/profile')}
             />
           </div>
@@ -95,19 +94,19 @@ export function MainLayout({ children }: MainLayoutProps) {
         {/* Mobile Header - conditionally show/hide */}
         <header 
           className={cn(
-            "sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm md:hidden transition-transform duration-300",
+            "sticky top-0 z-10 border-b border-border bg-card shadow-sm md:hidden transition-transform duration-300",
             !showMobileHeader && "-translate-y-full"
           )}
         >
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
-              {/* App Logo/Title */}
-              <div className="font-bold text-xl text-primary-600 dark:text-primary-400 ml-8">
+              {/* App Logo/Title - add margin-left to move away from hamburger menu */}
+              <div className="font-bold text-xl text-primary ml-14">
                 FitFlex
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {/* Theme Toggle */}
               <ThemeToggle variant="ghost" />
               
@@ -115,8 +114,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               <Avatar
                 src={user?.profileImage}
                 alt={user?.name || user?.email?.split('@')[0] || 'User'}
-                size="sm"
-                className="border border-gray-200 dark:border-gray-700"
+                className="border border-border"
                 onClick={() => navigate('/profile')}
               />
             </div>
@@ -129,52 +127,38 @@ export function MainLayout({ children }: MainLayoutProps) {
         </main>
         
         {/* Mobile bottom navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 z-10">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 border-t border-border bg-card z-10">
           <div className="flex justify-around h-16 items-center px-4">
             <button 
               className="flex flex-col items-center justify-center w-16 py-1"
               onClick={() => navigate('/home')}
             >
-              <span className="p-1 rounded-full bg-primary-50 dark:bg-primary-900/20">
-                <ChevronLeft className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+              <span className="p-1 rounded-full bg-primary/10">
+                <ChevronLeft className="h-5 w-5 text-primary" />
               </span>
-              <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">Back</span>
+              <span className="text-xs mt-1 text-muted-foreground">Back</span>
             </button>
             
             <button 
               className="flex flex-col items-center justify-center w-16 py-1"
               onClick={() => navigate('/home')}
             >
-              <span className="p-1 rounded-full bg-primary-50 dark:bg-primary-900/20">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-primary-600 dark:text-primary-400">
-                  <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
+              <span className="p-1 rounded-full bg-primary/10">
+                <Home className="h-5 w-5 text-primary" />
               </span>
-              <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">Home</span>
+              <span className="text-xs mt-1 text-muted-foreground">Home</span>
             </button>
             
             <button 
               className="flex flex-col items-center justify-center w-16 py-1"
               onClick={() => navigate('/profile')}
             >
-              <span className="p-1 rounded-full bg-primary-50 dark:bg-primary-900/20">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-primary-600 dark:text-primary-400">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+              <span className="p-1 rounded-full bg-primary/10">
+                <User className="h-5 w-5 text-primary" />
               </span>
-              <span className="text-xs mt-1 text-gray-600 dark:text-gray-400">Profile</span>
+              <span className="text-xs mt-1 text-muted-foreground">Profile</span>
             </button>
           </div>
-        </div>
-        
-        {/* Floating theme toggle for mobile */}
-        <div className="md:hidden fixed bottom-20 right-4 z-20">
-          <ThemeToggle 
-            variant="default" 
-            className="rounded-full shadow-lg w-12 h-12 flex items-center justify-center" 
-          />
         </div>
       </div>
     </div>
