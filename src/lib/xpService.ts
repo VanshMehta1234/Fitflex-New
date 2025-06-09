@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
 import { XpTransaction, XpSource } from '../types/xp';
+import { showXpNotification } from '../components/XpNotification';
 
 // Constants for XP requirements per level
 export const LEVEL_XP_REQUIREMENTS: Record<number, number> = {
@@ -105,6 +106,16 @@ export const addXpToUser = async (
     if (updateError) {
       console.error('Error updating user XP in profile:', updateError);
       return false;
+    }
+    
+    // Show XP notification if available (check if function is initialized)
+    if (typeof showXpNotification === 'function') {
+      try {
+        showXpNotification(amount, description);
+      } catch (error) {
+        console.error('Error showing XP notification:', error);
+        // Don't let notification errors affect the XP award
+      }
     }
     
     return true;

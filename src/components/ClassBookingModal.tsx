@@ -35,15 +35,15 @@ export const ClassBookingModal: React.FC<ClassBookingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="modal-wrapper">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/70"
+        className="modal-backdrop"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className="relative z-10 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="modal-content animate-fade-in">
         {/* Close button */}
         <button 
           onClick={onClose}
@@ -53,7 +53,7 @@ export const ClassBookingModal: React.FC<ClassBookingModalProps> = ({
         </button>
         
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-2 border-b border-gray-200 dark:border-gray-700 mb-4">
           <h2 className="text-xl font-semibold">{selectedClass.name}</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
             {selectedClass.instructor} - {formatDate(selectedClass.date)}
@@ -61,7 +61,7 @@ export const ClassBookingModal: React.FC<ClassBookingModalProps> = ({
         </div>
         
         {/* Content */}
-        <div className="p-6">
+        <div className="py-2">
           {selectedClass.description && (
             <p className="text-sm mb-4">{selectedClass.description}</p>
           )}
@@ -115,7 +115,7 @@ export const ClassBookingModal: React.FC<ClassBookingModalProps> = ({
         </div>
         
         {/* Footer */}
-        <div className="flex justify-end gap-2 p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end gap-2 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>

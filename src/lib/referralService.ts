@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { nanoid } from 'nanoid';
 import { addXpToUser } from './xpService';
 import { XpSource } from '../types/xp';
+import { awardReferralSentXp, awardReferralSignupXp } from './xpRewardsService';
 
 // Define Referral and ReferralRedemption types
 export interface Referral {
@@ -215,6 +216,9 @@ export const createReferral = async (userId: string): Promise<Referral | null> =
     // Store the referral code in localStorage as a fallback
     storeReferralCodeLocally(userId, referralCode, data.id);
     
+    // Award XP for creating a referral
+    await awardReferralSentXp(userId);
+    
     console.log('New referral created successfully:', data);
     return data as Referral;
   } catch (error) {
@@ -355,21 +359,19 @@ export const redeemReferralCode = async (code: string, redeemerId: string): Prom
       // We'll consider it a success anyway since the redemption was recorded
     }
     
+    // Get redeemer's name for the XP award description
+    const { data: redeemerProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('name')
+      .eq('id', redeemerId)
+      .single();
+      
+    const redeemerName = profileError ? 'a new user' : (redeemerProfile?.name || 'a new user');
+    
     // Award XP to both users
     try {
-      // Award XP to the referrer
-      const referrerSuccess = await addXpToUser(
-        referral.referrer_id,
-        referral.reward_xp,
-        `Referral bonus: User redeemed your code`,
-        'referral_bonus'
-      );
-      
-      if (!referrerSuccess) {
-        console.error('Failed to award XP to referrer');
-      } else {
-        console.log(`Successfully awarded ${referral.reward_xp} XP to referrer ${referral.referrer_id}`);
-      }
+      // Award XP to the referrer using the new service
+      await awardReferralSignupXp(referral.referrer_id, redeemerName);
       
       // Award XP to the redeemer
       const redeemBonus = 500; // Standard bonus for redeeming

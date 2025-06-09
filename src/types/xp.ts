@@ -1,13 +1,4 @@
-// Import XpSource type from a string literal to avoid circular dependency
-export type XpSource = 
-  | 'referral_bonus' 
-  | 'referral_redemption' 
-  | 'class_attendance' 
-  | 'achievement_unlocked' 
-  | 'streak_bonus' 
-  | 'level_up' 
-  | 'admin_adjustment';
-
+// XP Transaction type
 export interface XpTransaction {
   id: string;
   user_id: string;
@@ -15,4 +6,17 @@ export interface XpTransaction {
   description: string;
   source: XpSource;
   created_at: string;
-} 
+}
+
+// XP Source type
+export type XpSource = 
+  | 'daily_check_in' 
+  | 'streak_bonus' 
+  | 'class_attendance' 
+  | 'class_booking'
+  | 'achievement_unlocked'
+  | 'referral_bonus'
+  | 'referral_redemption'
+  | 'level_up'
+  | 'profile_completion'
+  | 'social_share'; 

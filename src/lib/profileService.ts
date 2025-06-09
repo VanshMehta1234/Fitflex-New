@@ -1,18 +1,159 @@
 import { supabase } from '../supabase';
+import { awardProfileCompletionXp } from './xpRewardsService';
 
 // Types for profile update
 export interface ProfileUpdateData {
   name?: string;
   profileImage?: string;
-
 }
+
+// Define proper profile type
+export interface UserProfile {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  streak?: number;
+  membershipType?: string;
+  profile_image?: string;
+  profileImage?: string;
+  bio?: string;
+  location?: string;
+  phone?: string;
+  birthdate?: string;
+  website?: string;
+  [key: string]: any; // Allow for dynamic properties
+}
+
+/**
+ * ProfileCache - Singleton class for efficient profile caching
+ * Uses in-memory LRU cache with proper types and TTL
+ */
+class ProfileCache {
+  private static instance: ProfileCache;
+  private cache: Map<string, { data: UserProfile; timestamp: number }>;
+  private pendingFetches: Map<string, Promise<UserProfile | null>>;
+  private readonly TTL: number = 5 * 60 * 1000; // 5 minutes
+  private readonly MAX_CACHE_SIZE: number = 100;
+
+  private constructor() {
+    this.cache = new Map();
+    this.pendingFetches = new Map();
+  }
+
+  public static getInstance(): ProfileCache {
+    if (!ProfileCache.instance) {
+      ProfileCache.instance = new ProfileCache();
+    }
+    return ProfileCache.instance;
+  }
+
+  /**
+   * Get a profile from cache or fetch it
+   */
+  public async getProfile(userId: string): Promise<UserProfile | null> {
+    // Check cache first
+    const cacheEntry = this.cache.get(userId);
+    const now = Date.now();
+    
+    // Return if valid cache entry exists
+    if (cacheEntry && (now - cacheEntry.timestamp < this.TTL)) {
+      return cacheEntry.data;
+    }
+    
+    // If there's already a pending fetch, return that promise
+    if (this.pendingFetches.has(userId)) {
+      return this.pendingFetches.get(userId) as Promise<UserProfile | null>;
+    }
+    
+    // Start a new fetch
+    const fetchPromise = this.fetchProfile(userId);
+    this.pendingFetches.set(userId, fetchPromise);
+    
+    try {
+      const result = await fetchPromise;
+      return result;
+    } finally {
+      // Clean up pending fetch regardless of outcome
+      this.pendingFetches.delete(userId);
+    }
+  }
+  
+  /**
+   * Fetch profile from the database
+   */
+  private async fetchProfile(userId: string): Promise<UserProfile | null> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // No profile found
+        }
+        throw error;
+      }
+      
+      if (data) {
+        const profile: UserProfile = {
+          ...data,
+          profileImage: data.profile_image, // Ensure consistent naming
+        };
+        
+        this.set(userId, profile);
+        return profile;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      throw new Error('Failed to fetch profile data');
+    }
+  }
+  
+  /**
+   * Store a profile in the cache
+   */
+  public set(userId: string, profile: UserProfile): void {
+    // Manage cache size using LRU eviction
+    if (this.cache.size >= this.MAX_CACHE_SIZE) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    
+    this.cache.set(userId, {
+      data: profile,
+      timestamp: Date.now()
+    });
+  }
+  
+  /**
+   * Invalidate a specific cache entry
+   */
+  public invalidate(userId: string): void {
+    this.cache.delete(userId);
+  }
+  
+  /**
+   * Clear the entire cache
+   */
+  public clear(): void {
+    this.cache.clear();
+  }
+}
+
+// Export the singleton instance
+export const profileCache = ProfileCache.getInstance();
 
 /**
  * Extract initials from name
  * @param name Full name
  * @returns Initials (1-2 characters)
  */
-export const getInitials = (name: string): string => {
+export const getInitials = (name: string | undefined): string => {
   if (!name || name.trim() === '') return '?';
   
   const parts = name.trim().split(/\s+/);
@@ -86,7 +227,7 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
     // First check if the profile exists
     const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, name, profile_image')
       .eq('id', userId)
       .single();
 
@@ -104,6 +245,9 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
     // Remove the original profileImage field to avoid duplicating it
     delete (dbProfileData as any).profileImage;
 
+    // Check if this is the first time completing the profile
+    let isFirstTimeCompletion = false;
+    
     if (!existingProfile) {
       // Create a new profile if it doesn't exist
       const { error: insertError } = await supabase
@@ -119,6 +263,11 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
       if (insertError) {
         throw insertError;
       }
+      
+      // If they provided a name and profile image during creation, consider it complete
+      if (profileData.name && profileData.profileImage) {
+        isFirstTimeCompletion = true;
+      }
     } else {
       // Update the existing profile
       const { error: updateError } = await supabase
@@ -129,7 +278,27 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
       if (updateError) {
         throw updateError;
       }
+      
+      // Check if this is the first time completing the profile
+      // (previously had no name or profile image, but now has both)
+      const hadNameBefore = !!existingProfile.name;
+      const hadImageBefore = !!existingProfile.profile_image;
+      const hasNameNow = !!profileData.name;
+      const hasImageNow = !!profileData.profileImage;
+      
+      // Consider profile complete if both name and image are added and at least one was missing before
+      if (hasNameNow && hasImageNow && (!hadNameBefore || !hadImageBefore)) {
+        isFirstTimeCompletion = true;
+      }
     }
+    
+    // Award XP for completing profile if applicable
+    if (isFirstTimeCompletion && userId) {
+      await awardProfileCompletionXp(userId);
+    }
+    
+    // Invalidate the cache entry for this user
+    profileCache.invalidate(userId);
   } catch (error) {
     console.error('Error updating user profile:', error);
     throw new Error('Failed to update profile. Please try again.');
@@ -141,38 +310,11 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
  * @param userId The user's ID
  * @returns The complete profile data
  */
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
-      console.error('Error in getUserProfile query:', error);
-      
-      // If no profile found, return null instead of throwing
-      if (error.code === 'PGRST116') {
-        console.info('No profile found for user, will be created on update');
-        return null;
-      }
-      
-      throw error;
-    }
-
-    // Return the profile data with consistent naming
-    if (data) {
-      return {
-        ...data,
-        // Make sure we transform profile_image to profileImage for consistent frontend usage
-        profileImage: data.profile_image,
-      };
-    }
-    
-    return data;
+    return await profileCache.getProfile(userId);
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('Error in getUserProfile:', error);
     throw new Error('Failed to fetch profile data.');
   }
 }; 

@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 import { ExtendedUser, AppUser } from '../types/user';
-import { ProfileUpdateData, updateUserProfile, getUserProfile } from '../lib/profileService';
+import { ProfileUpdateData, updateUserProfile, getUserProfile, profileCache, UserProfile } from '../lib/profileService';
 import toast from 'react-hot-toast';
 
 export type UserRole = 'user' | 'admin';
@@ -39,38 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AppUser>(null);
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [loading, setLoading] = useState(true);
-
-  // Fetch the user's profile including their role
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return { role: 'user' as UserRole };
-      }
-
-      return {
-        role: (data?.role || 'user') as UserRole,
-        streak: data?.streak || 0,
-        membershipType: data?.membershipType || 'Basic',
-        name: data?.name,
-        profileImage: data?.profile_image,
-        bio: data?.bio,
-        location: data?.location,
-        phone: data?.phone,
-        birthdate: data?.birthdate,
-        website: data?.website
-      };
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-      return { role: 'user' as UserRole };
-    }
-  };
 
   // Create a profile for a new user
   const createUserProfile = async (userId: string, role: UserRole = 'user') => {
@@ -124,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.id) return;
 
     try {
+      // Get updated profile (cache is already invalidated by updateUserProfile)
       const profile = await getUserProfile(user.id);
       
       if (profile) {
@@ -137,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         
         setUser(extendedUser);
-        setUserRole(profile.role || 'user');
+        setUserRole((profile.role as UserRole) || 'user');
       }
     } catch (error) {
       console.error('Error refreshing user profile:', error);

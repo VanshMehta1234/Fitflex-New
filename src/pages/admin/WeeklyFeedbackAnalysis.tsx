@@ -119,37 +119,35 @@ const WeeklyFeedbackAnalysis = React.memo(() => {
 
   // Load admin feedback data only once when component mounts
   useEffect(() => {
-    let isMounted = true;
-    let dataLoaded = false;
+    const controller = new AbortController();
+    const signal = controller.signal;
     
-    if (user && userRole === 'admin' && !isAdminLoading) {
-      const loadData = async () => {
-        // Skip if we already have data
-        if (adminFeedbackForms.length > 0) {
-          console.log("WeeklyFeedbackAnalysis - Already have data, skipping initial load");
-          return;
-        }
-        
+    async function loadInitialData() {
+      // Skip if we already have data
+      if (adminFeedbackForms.length > 0) {
+        console.log("WeeklyFeedbackAnalysis - Already have data, skipping initial load");
+        return;
+      }
+      
+      if (user && userRole === 'admin' && !isAdminLoading) {
         try {
-          if (isMounted && !dataLoaded) {
-            console.log("WeeklyFeedbackAnalysis - Loading initial data");
-            dataLoaded = true;
-            await loadAdminFeedback(true);
-          }
+          console.log("WeeklyFeedbackAnalysis - Loading initial data");
+          await loadAdminFeedback(true);
         } catch (error) {
-          console.error("Failed to load admin data:", error);
-          if (isMounted) {
+          if (!signal.aborted) {
+            console.error("Failed to load admin data:", error);
             toast.error("Failed to load feedback data");
           }
         }
-      };
-      loadData();
+      }
     }
     
+    loadInitialData();
+    
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [user?.id, userRole]); // Removed loadAdminFeedback and isAdminLoading from dependencies
+  }, []); // Empty dependency array - only run once on mount
 
   // Handle refresh with useCallback to prevent recreation on every render
   const handleRefresh = useCallback(async () => {

@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, ReactNode, useRef, useM
 import { supabase } from '../supabase';
 import { useAuth } from "./AuthContext";
 import toast from "react-hot-toast";
+import { profileCache, UserProfile } from "../lib/profileService";
+import { awardFeedbackSubmissionXp } from "../lib/xpRewardsService";
 
 // Define feedback form type
 export interface FeedbackForm {
@@ -22,7 +24,7 @@ export interface FeedbackForm {
     name: string;
     email: string;
     profile_image: string;
-  };
+  } | null;
 }
 
 // Define the weekly feedback data type
@@ -211,20 +213,33 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id, userRole]); // Only depend on user ID and role
 
-  // Load admin feedback with improved throttling to prevent continuous refreshing
+  // Helper function to batch array into chunks
+  function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  // Load admin feedback with proper dependency isolation to prevent circular dependencies
   const loadAdminFeedback = useCallback(async (forceRefresh = false): Promise<void> => {
+    // Store the current state values in local variables to avoid closure issues
+    const currentUser = user;
+    const currentUserRole = userRole;
+    
     // If no user is logged in, there's nothing to do
-    if (!user) {
+    if (!currentUser) {
       console.log("FeedbackContext - No user logged in, skipping admin feedback load");
       return Promise.resolve();
     }
     
     // Check admin status
-    const hasAdminAccess = userRole === 'admin';
+    const hasAdminAccess = currentUserRole === 'admin';
     
     // Check access permissions
     if (!hasAdminAccess) {
-      console.log("FeedbackContext - Access denied for:", user.email);
+      console.log("FeedbackContext - Access denied for:", currentUser.email);
       return Promise.reject(new Error("Admin access denied"));
     }
     
@@ -237,8 +252,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     // Apply stricter throttling
     const now = Date.now();
     const THROTTLE_DELAY = 120000; // 2 minutes
+    const currentAdminForms = adminFeedbackForms.length;
     
-    if (!forceRefresh && adminFeedbackForms.length > 0 && (now - lastAdminFetchRef.current < THROTTLE_DELAY)) {
+    if (!forceRefresh && currentAdminForms > 0 && (now - lastAdminFetchRef.current < THROTTLE_DELAY)) {
       const timeSinceLastFetch = Math.round((now - lastAdminFetchRef.current) / 1000);
       console.log(`FeedbackContext - Throttling refresh, last fetch was ${timeSinceLastFetch}s ago (minimum interval: ${THROTTLE_DELAY / 1000}s)`);
       return Promise.resolve();
@@ -275,25 +291,74 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             .map(form => form.user_id)
         ));
         
-        // If we have unique user IDs, fetch their profiles in a single query
-        let userProfiles: Record<string, any> = {};
+        // If we have unique user IDs, fetch their profiles from cache or in batches
+        let userProfiles: Record<string, UserProfile> = {};
         
         if (uniqueUserIds.length > 0) {
-          const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, name, email, profile_image")
-            .in("id", uniqueUserIds);
+          console.log(`FeedbackContext - Loading profiles for ${uniqueUserIds.length} users`);
           
-          if (profilesError) {
-            console.error("Error loading user profiles:", profilesError);
-            // Non-critical error, continue with the feedback data we have
-          } else if (profilesData) {
-            // Create a lookup object for easier access
-            userProfiles = profilesData.reduce((acc, profile) => {
-              acc[profile.id] = profile;
-              return acc;
-            }, {} as Record<string, any>);
+          // First try to get profiles from cache
+          const cachedProfiles: Record<string, UserProfile> = {};
+          const uncachedUserIds: string[] = [];
+          
+          // Process in parallel for better performance
+          await Promise.all(uniqueUserIds.map(async (userId) => {
+            try {
+              const profile = await profileCache.getProfile(userId);
+              if (profile) {
+                cachedProfiles[userId] = profile;
+              } else {
+                uncachedUserIds.push(userId);
+              }
+            } catch (error) {
+              // If there's an error getting from cache, we'll fetch it
+              uncachedUserIds.push(userId);
+            }
+          }));
+          
+          console.log(`FeedbackContext - Found ${Object.keys(cachedProfiles).length} cached profiles, need to fetch ${uncachedUserIds.length}`);
+          
+          // If we have profiles to fetch, do it in batches of 20
+          if (uncachedUserIds.length > 0) {
+            // Split into chunks of 20 for efficient batching
+            const userIdChunks = chunkArray(uncachedUserIds, 20);
+            
+            // Process batches in parallel
+            await Promise.all(userIdChunks.map(async (chunk) => {
+              try {
+                const { data: profilesData, error: profilesError } = await supabase
+                  .from("profiles")
+                  .select("id, name, email, profile_image")
+                  .in("id", chunk);
+                
+                if (profilesError) {
+                  console.error("Error loading user profiles chunk:", profilesError);
+                  return; // Continue with what we have
+                }
+                
+                if (profilesData) {
+                  // Add to our profiles collection and update cache
+                  for (const profile of profilesData) {
+                    const userProfile: UserProfile = {
+                      ...profile,
+                      profileImage: profile.profile_image,
+                    };
+                    
+                    // Store in our local result
+                    userProfiles[profile.id] = userProfile;
+                    
+                    // Also update the cache
+                    profileCache.set(profile.id, userProfile);
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching profile batch:", error);
+              }
+            }));
           }
+          
+          // Merge cached profiles with fetched ones
+          userProfiles = { ...cachedProfiles, ...userProfiles };
         }
         
         // Merge the feedback data with user profiles
@@ -302,9 +367,15 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             return { ...form, user: null };
           }
           
+          const profile = userProfiles[form.user_id];
+          
           return {
             ...form,
-            user: userProfiles[form.user_id] || null
+            user: profile ? {
+              name: profile.name || 'Unknown User',
+              email: profile.email || '',
+              profile_image: profile.profile_image || profile.profileImage || ''
+            } : null
           };
         });
         
@@ -339,7 +410,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       setIsAdminLoading(false);
       isFetchingAdminData.current = false;
     }
-  }, [user, userRole]); // Removed adminFeedbackForms.length from dependencies
+  }, []);  // Empty dependency array - implementation uses refs and closure variables
 
   // Submit weekly feedback
   const submitWeeklyFeedback = useCallback(async (feedbackData: WeeklyFeedbackData): Promise<FeedbackForm | null> => {
@@ -376,7 +447,10 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         return null;
       }
 
-      toast.success("Feedback submitted successfully");
+      // Award XP for submitting feedback
+      await awardFeedbackSubmissionXp(user.id);
+      
+      toast.success("Feedback submitted successfully! +25 XP");
       
       // Update local state
       setFeedbackForms((prev) => [data, ...prev]);

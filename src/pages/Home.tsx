@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { DailyQuoteCard } from '../components/ui/DailyQuoteCard';
 import { FitnessTipCard } from '../components/ui/FitnessTipCard';
+import { DailyChallenges, XpEarningGuide } from '../components/DailyChallenges';
 import { LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
 import { useNavigate } from 'react-router-dom';
 
@@ -152,6 +153,9 @@ export default function Home() {
             </CardContent>
           </Card>
           
+          {/* Daily Challenges */}
+          <DailyChallenges />
+          
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-3 md:hidden">
             <Card 
@@ -202,6 +206,9 @@ export default function Home() {
               </div>
             </Card>
           </div>
+          
+          {/* XP Earning Guide */}
+          <XpEarningGuide />
           
           {/* Fitness Quote */}
           <DailyQuoteCard />

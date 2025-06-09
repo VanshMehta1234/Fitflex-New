@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { awardCheckInXp } from './xpRewardsService';
 
 export type Attendance = {
   id: string;
@@ -8,27 +9,104 @@ export type Attendance = {
   created_at: string;
 };
 
-export const attendanceService = {
+const attendanceService = {
   // Check in a user
   async checkIn(userId: string, notes?: string): Promise<Attendance | null> {
-    const { data, error } = await supabase
-      .from('attendance')
-      .insert([
-        {
-          user_id: userId,
-          check_in_time: new Date().toISOString(),
-          notes
-        },
-      ])
-      .select()
-      .single();
+    try {
+      // First get the user's streak count from their profile
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('streak')
+        .eq('id', userId)
+        .single();
+      
+      if (userError) {
+        console.error('Error fetching user streak:', userError);
+        // Continue with check-in anyway
+      }
+      
+      const currentStreak = userData?.streak || 0;
+      
+      // Insert the attendance record
+      const { data, error } = await supabase
+        .from('attendance')
+        .insert([
+          {
+            user_id: userId,
+            check_in_time: new Date().toISOString(),
+            notes
+          },
+        ])
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error checking in:', error);
+      if (error) {
+        console.error('Error checking in:', error);
+        return null;
+      }
+      
+      // Calculate new streak based on whether the user had a check-in yesterday
+      let newStreak = currentStreak + 1;
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      
+      const dayBefore = new Date();
+      dayBefore.setDate(dayBefore.getDate() - 2);
+      dayBefore.setHours(0, 0, 0, 0);
+      
+      // Check if there was a check-in yesterday
+      const { data: yesterdayData, error: yesterdayError } = await supabase
+        .from('attendance')
+        .select('check_in_time')
+        .eq('user_id', userId)
+        .gte('check_in_time', yesterday.toISOString())
+        .lt('check_in_time', new Date().toISOString())
+        .order('check_in_time', { ascending: false });
+        
+      if (yesterdayError) {
+        console.error('Error checking yesterday\'s attendance:', yesterdayError);
+      }
+      
+      // If no check-in yesterday, check if it's been more than 2 days since last check-in
+      if (!yesterdayData || yesterdayData.length === 0) {
+        // Check if there was a check-in the day before yesterday
+        const { data: dayBeforeData, error: dayBeforeError } = await supabase
+          .from('attendance')
+          .select('check_in_time')
+          .eq('user_id', userId)
+          .gte('check_in_time', dayBefore.toISOString())
+          .lt('check_in_time', yesterday.toISOString())
+          .order('check_in_time', { ascending: false });
+          
+        if (dayBeforeError) {
+          console.error('Error checking day before\'s attendance:', dayBeforeError);
+        }
+        
+        // If no check-in in the last 2 days, reset streak
+        if (!dayBeforeData || dayBeforeData.length === 0) {
+          newStreak = 1; // Reset to 1 for today's check-in
+        }
+      }
+      
+      // Update the user's streak in their profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ streak: newStreak })
+        .eq('id', userId);
+        
+      if (updateError) {
+        console.error('Error updating streak:', updateError);
+      }
+      
+      // Award XP for the check-in
+      await awardCheckInXp(userId, newStreak);
+
+      return data;
+    } catch (error) {
+      console.error('Error in check-in process:', error);
       return null;
     }
-
-    return data;
   },
 
   // Get user's attendance history
@@ -152,4 +230,6 @@ export const attendanceService = {
 
     return data || [];
   }
-}; 
+};
+
+export { attendanceService }; 

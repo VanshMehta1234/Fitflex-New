@@ -6,6 +6,8 @@ import { XpProvider } from './context/XpContext';
 import { FeedbackProvider } from './context/FeedbackContext';
 import { ClassProvider } from './context/ClassContext';
 import { ReferralProvider } from './context/ReferralContext';
+import { ModalProvider } from './context/ModalContext';
+import { LeaderboardProvider } from './context/LeaderboardContext';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -20,9 +22,12 @@ import AdminClasses from './pages/AdminClasses';
 import Refer from './pages/Refer';
 import WeeklyFeedback from './pages/WeeklyFeedback';
 import WeeklyFeedbackAnalysis from './pages/admin/WeeklyFeedbackAnalysis';
+import Leaderboard from './pages/Leaderboard';
+import XpRewards from './pages/XpRewards';
 import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import RedirectIfAuthenticated from './components/RedirectIfAuthenticated';
+import { XpNotificationManager } from './components/XpNotification';
 
 // Create a component for the app routes to separate UI rendering from data context
 const AppRoutes = () => (
@@ -43,6 +48,8 @@ const AppRoutes = () => (
         <Route path="/classes/:id" element={<ClassDetails />} />
         <Route path="/refer" element={<Refer />} />
         <Route path="/weekly-feedback" element={<WeeklyFeedback />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/xp-rewards" element={<XpRewards />} />
         
         <Route element={<RoleBasedRoute allowedRoles={['admin']} />}>
           <Route path="/admin/*" element={<div>Admin Area</div>} />
@@ -90,11 +97,17 @@ function App() {
           <FeedbackProvider>
             <ClassProvider>
               <ReferralProvider>
-                {/* Separate UI components from data providers */}
-                <React.Fragment>
-                  <AppRoutes />
-                  <Toaster {...toastOptions} />
-                </React.Fragment>
+                <LeaderboardProvider>
+                  <ModalProvider>
+                    <XpNotificationManager>
+                      {/* Separate UI components from data providers */}
+                      <React.Fragment>
+                        <AppRoutes />
+                        <Toaster {...toastOptions} />
+                      </React.Fragment>
+                    </XpNotificationManager>
+                  </ModalProvider>
+                </LeaderboardProvider>
               </ReferralProvider>
             </ClassProvider>
           </FeedbackProvider>

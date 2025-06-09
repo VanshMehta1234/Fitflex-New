@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
 import toast from 'react-hot-toast';
 import { isBefore, parseISO, startOfDay, addYears } from 'date-fns';
+import { awardClassBookingXp, awardClassAttendanceXp, awardMultipleClassesXp } from './xpRewardsService';
 
 // Class type for TypeScript
 export type Class = {
@@ -266,6 +267,8 @@ export const bookClass = async (classId: string, userId: string): Promise<ClassB
       
     if (cancelledBookingError) throw cancelledBookingError;
     
+    let bookingResult;
+    
     if (cancelledBooking) {
       // Reactivate the cancelled booking
       const { data: updatedBooking, error: updateError } = await supabase
@@ -278,27 +281,31 @@ export const bookClass = async (classId: string, userId: string): Promise<ClassB
       if (updateError) throw updateError;
       if (!updatedBooking) throw new Error('Failed to book class');
       
-      toast.success('Class booked successfully');
-      return updatedBooking;
+      bookingResult = updatedBooking;
+    } else {
+      // Create a new booking
+      const { data: newBooking, error: createError } = await supabase
+        .from('class_bookings')
+        .insert([{
+          class_id: classId,
+          user_id: userId,
+          booking_date: new Date().toISOString(),
+          attendance_status: 'booked'
+        }])
+        .select()
+        .single();
+        
+      if (createError) throw createError;
+      if (!newBooking) throw new Error('Failed to book class');
+      
+      bookingResult = newBooking;
     }
     
-    // Create a new booking
-    const { data: newBooking, error: createError } = await supabase
-      .from('class_bookings')
-      .insert([{
-        class_id: classId,
-        user_id: userId,
-        booking_date: new Date().toISOString(),
-        attendance_status: 'booked'
-      }])
-      .select()
-      .single();
-      
-    if (createError) throw createError;
-    if (!newBooking) throw new Error('Failed to book class');
+    // Award XP for booking the class
+    await awardClassBookingXp(userId, classData.name);
     
     toast.success('Class booked successfully');
-    return newBooking;
+    return bookingResult;
   } catch (error) {
     console.error('Error booking class:', error);
     throw error;
@@ -359,6 +366,109 @@ export const getClassBookings = async (classId: string): Promise<ClassBooking[]>
     return data || [];
   } catch (error) {
     console.error('Error fetching class bookings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Mark a user as attended for a class
+ * @param bookingId The booking ID
+ * @param userId The user ID
+ * @param classId The class ID
+ * @returns The updated booking
+ */
+export const markAttendance = async (bookingId: string, userId: string, classId: string): Promise<ClassBooking> => {
+  try {
+    // Get class details
+    const classData = await getClassById(classId);
+    if (!classData) {
+      throw new Error('Class not found');
+    }
+    
+    // Update the booking status
+    const { data: updatedBooking, error: updateError } = await supabase
+      .from('class_bookings')
+      .update({ attendance_status: 'attended' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+      
+    if (updateError) throw updateError;
+    if (!updatedBooking) throw new Error('Failed to update attendance');
+    
+    // Check if this is the first time attending this type of class
+    const { data: previousAttendance, error: historyError } = await supabase
+      .from('class_bookings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('attendance_status', 'attended')
+      .neq('id', bookingId) // Exclude the current booking
+      .in('class_id', [classId]); // Same class
+      
+    if (historyError) {
+      console.error('Error checking attendance history:', historyError);
+    }
+    
+    const isFirstTime = !previousAttendance || previousAttendance.length === 0;
+    
+    // Award XP for attending the class
+    await awardClassAttendanceXp(userId, classData.name, isFirstTime);
+    
+    // Check if user has attended multiple classes this week
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const { data: weeklyAttendance, error: weeklyError } = await supabase
+      .from('class_bookings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('attendance_status', 'attended')
+      .gte('booking_date', startOfWeek.toISOString());
+      
+    if (weeklyError) {
+      console.error('Error checking weekly attendance:', weeklyError);
+    } else if (weeklyAttendance) {
+      // Award bonus XP for attending multiple classes in a week (3, 5, 7 classes)
+      const weeklyCount = weeklyAttendance.length;
+      
+      if (weeklyCount === 3 || weeklyCount === 5 || weeklyCount === 7) {
+        await awardMultipleClassesXp(userId, weeklyCount);
+      }
+    }
+    
+    toast.success('Attendance marked successfully');
+    return updatedBooking;
+  } catch (error) {
+    console.error('Error marking attendance:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to mark attendance');
+    throw error;
+  }
+};
+
+/**
+ * Mark a user as no-show for a class
+ * @param bookingId The booking ID
+ * @returns The updated booking
+ */
+export const markNoShow = async (bookingId: string): Promise<ClassBooking> => {
+  try {
+    // Update the booking status
+    const { data: updatedBooking, error } = await supabase
+      .from('class_bookings')
+      .update({ attendance_status: 'no_show' })
+      .eq('id', bookingId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    if (!updatedBooking) throw new Error('Failed to update attendance');
+    
+    toast.success('User marked as no-show');
+    return updatedBooking;
+  } catch (error) {
+    console.error('Error marking no-show:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to mark no-show');
     throw error;
   }
 }; 

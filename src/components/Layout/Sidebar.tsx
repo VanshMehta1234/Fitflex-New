@@ -17,7 +17,9 @@ import {
   CalendarCheck,
   Dumbbell,
   Share2,
-  Gift
+  Gift,
+  Trophy,
+  Star
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -66,6 +68,16 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       icon: CreditCard,
       label: 'Weekly Feedback',
       path: '/weekly-feedback',
+    },
+    {
+      icon: Trophy,
+      label: 'Leaderboard',
+      path: '/leaderboard',
+    },
+    {
+      icon: Star,
+      label: 'XP Rewards',
+      path: '/xp-rewards',
     },
     {
       icon: CreditCard,

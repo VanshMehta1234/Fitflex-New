@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { XpTransaction, XpSource } from '../types/xp';
 import { addXpToUser, getUserTotalXp, getUserXpTransactions, LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
 import toast from 'react-hot-toast';
+import { awardLevelMilestoneXp } from '../lib/xpRewardsService';
 
 // Constants for XP requirements per level
 // Now imported from xpService
@@ -99,6 +100,17 @@ export function XpProvider({ children }: XpProviderProps) {
       // Calculate and set user level
       const calculatedLevel = calculateLevel(totalXp);
       if (calculatedLevel !== userLevel) {
+        // Check if this is a milestone level that deserves bonus XP
+        if (calculatedLevel > userLevel && [5, 10, 15, 20].includes(calculatedLevel)) {
+          // Award milestone XP
+          await awardLevelMilestoneXp(user.id, calculatedLevel);
+          
+          // Refresh XP data to include the milestone bonus
+          const updatedXp = await getUserTotalXp(user.id);
+          setUserXp(updatedXp);
+        }
+        
+        // Update the level
         setUserLevel(calculatedLevel);
       }
     } catch (error) {
