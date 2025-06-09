@@ -1,65 +1,71 @@
-import React from 'react';
-import { cn } from '../../lib/utils';
+import * as React from "react"
+import * as AvatarPrimitive from "@radix-ui/react-avatar"
+
+import { cn } from "../../lib/utils"
 import { getInitials } from '../../lib/profileService';
 
-interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
-  src?: string | null;
-  alt?: string;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
-}
+const Avatar = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Root
+    ref={ref}
+    className={cn(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      className
+    )}
+    {...props}
+  />
+))
+Avatar.displayName = AvatarPrimitive.Root.displayName
 
-export function Avatar({ src, alt = 'Avatar', size = 'md', className, ...props }: AvatarProps) {
-  const sizeClasses = {
-    sm: 'h-8 w-8 text-xs',
-    md: 'h-10 w-10 text-sm',
-    lg: 'h-16 w-16 text-xl'
-  };
-  
-  const initials = getInitials(alt);
-  
-  return (
-    <div
-      className={cn(
-        'rounded-full overflow-hidden flex items-center justify-center bg-gray-200 dark:bg-gray-700 relative',
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    >
-      {src ? (
-        <img 
-          src={src} 
-          alt={alt} 
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <span className="font-medium text-gray-700 dark:text-gray-300">
-          {initials}
-        </span>
-      )}
-    </div>
-  );
-}
+const AvatarImage = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Image>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, src, alt, ...props }, ref) => {
+  const [imageError, setImageError] = React.useState(false);
 
-export function AvatarImage({
-  className,
-  src,
-  alt = 'Avatar',
-  ...props
-}: React.ImgHTMLAttributes<HTMLImageElement>) {
+  // Reset error state if src changes
+  React.useEffect(() => {
+    setImageError(false);
+  }, [src]);
+
+  // Don't render image component if src is null/undefined/empty or if there was an error
+  if (!src || imageError) {
+    return null;
+  }
+
   return (
-    <img
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn("aspect-square h-full w-full", className)}
       src={src}
       alt={alt}
-      className={cn('h-full w-full object-cover', className)}
+      onError={() => setImageError(true)}
       {...props}
     />
   );
-}
+})
+AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
-export function AvatarFallback({
+const AvatarFallback = React.forwardRef<
+  React.ElementRef<typeof AvatarPrimitive.Fallback>,
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+>(({ className, ...props }, ref) => (
+  <AvatarPrimitive.Fallback
+    ref={ref}
+    className={cn(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      className
+    )}
+    {...props}
+  />
+))
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
+
+export { Avatar, AvatarImage, AvatarFallback }
+
+export function AvatarImageFallback({
   className,
   children,
   ...props

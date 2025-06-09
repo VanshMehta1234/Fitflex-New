@@ -7,12 +7,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
-import { Avatar } from '../components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { uploadProfileImage, getInitials } from '../lib/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useXp } from '../context/XpContext';
 import toast from 'react-hot-toast';
+import { validateProfileImage } from '../lib/utils';
 import { 
   Camera, 
   User, 
@@ -89,6 +90,12 @@ export default function Profile() {
         profileImage: formData.profileImage
       });
       
+      // If we had a preview URL, clean it up
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
+      
       // Switch to info tab after successful update
       setActiveTab('info');
     } catch (error) {
@@ -130,6 +137,9 @@ export default function Profile() {
     }
     
     // Create a preview
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
     
@@ -140,7 +150,7 @@ export default function Profile() {
       // Upload the image to storage
       const imageUrl = await uploadProfileImage(file, user?.id || '');
       
-      // Update form data
+      // Update form data with the actual image URL (not the preview)
       setFormData(prev => ({ ...prev, profileImage: imageUrl }));
       
       // Dismiss loading toast and show success
@@ -214,10 +224,14 @@ export default function Profile() {
                   <div className="h-20 w-20 rounded-full border-4 border-white dark:border-gray-800 shadow-md overflow-hidden relative bg-white dark:bg-gray-800 mb-3">
                     {formData.profileImage ? (
                       <img 
-                        src={formData.profileImage} 
+                        src={validateProfileImage(formData.profileImage, user?.id)} 
                         alt={formData.name} 
                         className="h-full w-full object-cover"
                         loading="lazy"
+                        onError={(e) => {
+                          console.error("Failed to load profile image:", e);
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <div className="h-full w-full flex items-center justify-center bg-primary-50 dark:bg-primary-900/10 text-xl font-semibold">
@@ -260,10 +274,14 @@ export default function Profile() {
                       <div className="h-24 w-24 rounded-full border-4 border-white dark:border-gray-800 shadow-md overflow-hidden relative bg-white dark:bg-gray-800">
                         {formData.profileImage ? (
                           <img 
-                            src={formData.profileImage} 
+                            src={validateProfileImage(formData.profileImage, user?.id)} 
                             alt={formData.name} 
                             className="h-full w-full object-cover"
                             loading="lazy"
+                            onError={(e) => {
+                              console.error("Failed to load profile image:", e);
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
                           />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center bg-primary-50 dark:bg-primary-900/10 text-2xl font-semibold">
@@ -441,9 +459,13 @@ export default function Profile() {
                     {imagePreview || formData.profileImage ? (
                       <>
                         <img 
-                          src={imagePreview || formData.profileImage} 
+                          src={validateProfileImage(imagePreview || formData.profileImage, user?.id)} 
                           alt={formData.name} 
                           className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
+                          onError={(e) => {
+                            console.error("Failed to load profile image:", e);
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
                         />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
                           <Camera className="h-8 w-8 text-white" />
@@ -494,9 +516,13 @@ export default function Profile() {
                       {imagePreview || formData.profileImage ? (
                         <>
                           <img 
-                            src={imagePreview || formData.profileImage} 
+                            src={validateProfileImage(imagePreview || formData.profileImage, user?.id)} 
                             alt={formData.name} 
                             className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
+                            onError={(e) => {
+                              console.error("Failed to load profile image:", e);
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
                           />
                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
                             <Camera className="h-10 w-10 text-white" />

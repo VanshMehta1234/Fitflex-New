@@ -237,13 +237,18 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
     }
 
     // Transform profileImage to profile_image for database consistency
-    const dbProfileData = {
+    const dbProfileData: Record<string, any> = {
       ...profileData,
-      profile_image: profileData.profileImage,
     };
     
-    // Remove the original profileImage field to avoid duplicating it
-    delete (dbProfileData as any).profileImage;
+    // Ensure profile_image field is set if profileImage is provided
+    if (profileData.profileImage !== undefined) {
+      dbProfileData.profile_image = profileData.profileImage;
+      // Remove the original profileImage field to avoid duplicating it
+      delete dbProfileData.profileImage;
+    }
+
+    console.log("Updating profile with data:", dbProfileData);
 
     // Check if this is the first time completing the profile
     let isFirstTimeCompletion = false;
@@ -261,6 +266,7 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
         }]);
 
       if (insertError) {
+        console.error("Error inserting profile:", insertError);
         throw insertError;
       }
       
@@ -276,6 +282,7 @@ export const updateUserProfile = async (userId: string, profileData: ProfileUpda
         .eq('id', userId);
 
       if (updateError) {
+        console.error("Error updating profile:", updateError);
         throw updateError;
       }
       

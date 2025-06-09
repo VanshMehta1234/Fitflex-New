@@ -200,7 +200,6 @@ export default function Refer() {
       const result = await createNewReferral();
       if (result) {
         setGeneratedCode(activeReferral?.referral_code || null);
-        toast.success("New referral code created!");
       }
     } catch (error) {
       console.error("Error creating referral:", error);

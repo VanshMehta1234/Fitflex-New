@@ -228,6 +228,13 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     const currentUser = user;
     const currentUserRole = userRole;
     
+    console.log("FeedbackContext - loadAdminFeedback called", { 
+      forceRefresh, 
+      hasUser: !!currentUser, 
+      userRole: currentUserRole,
+      currentDataCount: adminFeedbackForms.length 
+    });
+    
     // If no user is logged in, there's nothing to do
     if (!currentUser) {
       console.log("FeedbackContext - No user logged in, skipping admin feedback load");
@@ -249,9 +256,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       return Promise.resolve();
     }
     
-    // Apply stricter throttling
+    // Apply stricter throttling - but always allow forced refreshes
     const now = Date.now();
-    const THROTTLE_DELAY = 120000; // 2 minutes
+    const THROTTLE_DELAY = 30000; // Reduced to 30 seconds (from 120000) for better UX
     const currentAdminForms = adminFeedbackForms.length;
     
     if (!forceRefresh && currentAdminForms > 0 && (now - lastAdminFetchRef.current < THROTTLE_DELAY)) {
@@ -273,6 +280,8 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
+
+      console.log("FeedbackContext - Feedback data received:", feedbackData ? feedbackData.length : 0, "records");
       
       if (feedbackError) {
         console.error("Error loading feedback forms:", feedbackError);
@@ -410,7 +419,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       setIsAdminLoading(false);
       isFetchingAdminData.current = false;
     }
-  }, []);  // Empty dependency array - implementation uses refs and closure variables
+  }, [user, userRole, adminFeedbackForms]);  // Add dependencies to ensure function has access to latest values
 
   // Submit weekly feedback
   const submitWeeklyFeedback = useCallback(async (feedbackData: WeeklyFeedbackData): Promise<FeedbackForm | null> => {
@@ -499,5 +508,15 @@ export function useFeedback() {
   if (context === undefined) {
     throw new Error("useFeedback must be used within a FeedbackProvider");
   }
+  
+  // Log when the hook is used and the current state
+  console.log("useFeedback hook called", { 
+    feedbackCount: context.feedbackForms.length,
+    adminFeedbackCount: context.adminFeedbackForms.length,
+    isLoading: context.isLoading,
+    isAdminLoading: context.isAdminLoading,
+    hasSubmittedThisWeek: context.hasSubmittedThisWeek
+  });
+  
   return context;
 } 

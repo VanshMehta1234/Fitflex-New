@@ -56,6 +56,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 import toast from "react-hot-toast";
 import { MainLayout } from "../../components/Layout/MainLayout";
+import { supabase } from "../../supabase";
 
 // Helper function to calculate average rating
 const calculateAverageRating = (ratings: Record<string, number>): number => {
@@ -74,12 +75,13 @@ const formatDate = (dateString: string): string => {
 };
 
 // Using React.memo to prevent unnecessary re-renders
-const WeeklyFeedbackAnalysis = React.memo(() => {
+const WeeklyFeedbackAnalysis = () => {
   console.log("WeeklyFeedbackAnalysis - Component rendering");
   
   const navigate = useNavigate();
   const { user, userRole } = useAuth();
-  const { adminFeedbackForms, loadAdminFeedback, isAdminLoading } = useFeedback();
+  const [adminFeedbackForms, setAdminFeedbackForms] = useState<FeedbackForm[]>([]);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewFeedback, setViewFeedback] = useState<FeedbackForm | null>(null);
@@ -92,8 +94,124 @@ const WeeklyFeedbackAnalysis = React.memo(() => {
   // Debug logging for monitoring data changes
   useEffect(() => {
     console.log(`WeeklyFeedbackAnalysis - adminFeedbackForms changed, count: ${adminFeedbackForms.length}`);
-  }, [adminFeedbackForms]);
+    //fetch directly from the database
+    const fetchData = async () => {
+      const response = await getFeedbackData();
+      if (response.data) {
+        setAdminFeedbackForms(response.data as FeedbackForm[]);
+      }
+      setIsAdminLoading(false);
+    };
+    
+    // Only fetch data if we don't have any yet
+    if (adminFeedbackForms.length === 0) {
+      fetchData();
+    }
+  }, [adminFeedbackForms.length]);
   
+  // Function to fetch feedback data from the database
+  async function getFeedbackData() {
+    setIsAdminLoading(true);
+    try {
+      // Fetch feedback forms
+      const response = await supabase
+        .from('feedback_forms')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      console.log("Feedback data fetched:", response.data?.length || 0, "records");
+      
+      if (response.data && response.data.length > 0) {
+        // Enrich with user data
+        const enrichedData = await enrichWithUserData(response.data);
+        return { data: enrichedData, error: null };
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Error fetching feedback data:", error);
+      toast.error("Failed to load feedback data");
+      return { data: null, error };
+    }
+  }
+  
+  // Function to enrich feedback data with user information
+  async function enrichWithUserData(feedbackData: any[]): Promise<FeedbackForm[]> {
+    // Extract unique user IDs from non-anonymous feedback
+    const uniqueUserIds = Array.from(new Set(
+      feedbackData
+        .filter(form => !form.is_anonymous)
+        .map(form => form.user_id)
+    ));
+    
+    if (uniqueUserIds.length === 0) {
+      // No users to fetch, return as is
+      return feedbackData as FeedbackForm[];
+    }
+    
+    // Fetch user profiles
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, name, email, profile_image")
+      .in("id", uniqueUserIds);
+    
+    // Create a map of user profiles by ID for quick lookup
+    const userProfiles: Record<string, any> = {};
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        userProfiles[profile.id] = profile;
+      });
+    }
+    
+    // Enrich feedback data with user information
+    return feedbackData.map(form => {
+      if (form.is_anonymous) {
+        return { ...form, user: null };
+      }
+      
+      const profile = userProfiles[form.user_id];
+      
+      return {
+        ...form,
+        user: profile ? {
+          name: profile.name || 'Unknown User',
+          email: profile.email || '',
+          profile_image: profile.profile_image || ''
+        } : null
+      };
+    }) as FeedbackForm[];
+  }
+
+  // Ensure user is admin
+  useEffect(() => {
+    if (user && userRole !== 'admin') {
+      toast.error("Admin access required");
+      navigate('/');
+    }
+  }, [user, userRole, navigate]);
+
+  // Handle refresh with useCallback to prevent recreation on every render
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    try {
+      const response = await getFeedbackData();
+      if (response.data) {
+        setAdminFeedbackForms(response.data as FeedbackForm[]);
+        toast.success("Feedback data refreshed");
+      } else if (response.error) {
+        throw response.error;
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast.error("Failed to refresh data");
+    } finally {
+      setIsRefreshing(false);
+      setIsAdminLoading(false);
+    }
+  }, [isRefreshing]);
+
   // Extract categories, weeks for filters - memoized to prevent recalculation on every render
   const categories = useMemo(() => 
     Array.from(new Set(adminFeedbackForms.map(f => f.category))),
@@ -108,62 +226,6 @@ const WeeklyFeedbackAnalysis = React.memo(() => {
       .reverse(),
     [adminFeedbackForms]
   );
-
-  // Ensure user is admin
-  useEffect(() => {
-    if (user && userRole !== 'admin') {
-      toast.error("Admin access required");
-      navigate('/');
-    }
-  }, [user, userRole, navigate]);
-
-  // Load admin feedback data only once when component mounts
-  useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-    
-    async function loadInitialData() {
-      // Skip if we already have data
-      if (adminFeedbackForms.length > 0) {
-        console.log("WeeklyFeedbackAnalysis - Already have data, skipping initial load");
-        return;
-      }
-      
-      if (user && userRole === 'admin' && !isAdminLoading) {
-        try {
-          console.log("WeeklyFeedbackAnalysis - Loading initial data");
-          await loadAdminFeedback(true);
-        } catch (error) {
-          if (!signal.aborted) {
-            console.error("Failed to load admin data:", error);
-            toast.error("Failed to load feedback data");
-          }
-        }
-      }
-    }
-    
-    loadInitialData();
-    
-    return () => {
-      controller.abort();
-    };
-  }, []); // Empty dependency array - only run once on mount
-
-  // Handle refresh with useCallback to prevent recreation on every render
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-    
-    setIsRefreshing(true);
-    try {
-      await loadAdminFeedback(true);
-      toast.success("Feedback data refreshed");
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast.error("Failed to refresh data");
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [isRefreshing, loadAdminFeedback]);
 
   // Calculate stats for overview - memoized to prevent recalculation on every render
   const totalFeedbacks = useMemo(() => adminFeedbackForms.length, [adminFeedbackForms]);
@@ -637,6 +699,6 @@ const WeeklyFeedbackAnalysis = React.memo(() => {
       )}
     </MainLayout>
   );
-});
+};
 
 export default WeeklyFeedbackAnalysis; 

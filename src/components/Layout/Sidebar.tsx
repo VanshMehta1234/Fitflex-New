@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Avatar } from '../ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { 
   Home, 
@@ -23,6 +23,7 @@ import {
   Star
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getInitials } from '../../lib/profileService';
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -177,10 +178,11 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
         <div className="p-4 border-b border-border">
           <div className="flex items-center space-x-3">
             <Avatar
-              src={user?.profileImage}
-              alt={user?.name || user?.email?.split('@')[0] || 'User'}
               className="h-10 w-10 border border-border"
-            />
+            >
+              <AvatarImage src={user?.profileImage} alt={user?.name || user?.email?.split('@')[0] || 'User'} />
+              <AvatarFallback>{getInitials(user?.name || user?.email?.split('@')[0] || 'User')}</AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {user?.name || user?.email?.split('@')[0] || 'User'}

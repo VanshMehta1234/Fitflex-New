@@ -4,6 +4,7 @@ import { supabase } from '../supabase';
 import { ExtendedUser, AppUser } from '../types/user';
 import { ProfileUpdateData, updateUserProfile, getUserProfile, profileCache, UserProfile } from '../lib/profileService';
 import toast from 'react-hot-toast';
+import { validateProfileImage } from '../lib/utils';
 
 export type UserRole = 'user' | 'admin';
 
@@ -92,17 +93,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.id) return;
 
     try {
-      // Get updated profile (cache is already invalidated by updateUserProfile)
+      // Clear the cache to ensure we get fresh data
+      profileCache.invalidate(user.id);
+      
+      // Get updated profile
       const profile = await getUserProfile(user.id);
       
       if (profile) {
+        // Get profile image from either field, validate it
+        const profileImage = validateProfileImage(
+          profile.profileImage || profile.profile_image, 
+          user.id
+        );
+
+        console.log("Refreshed profile image:", profileImage);
+        
         // Create an extended user with profile data
         const extendedUser: ExtendedUser = {
           ...user,
           streak: profile.streak,
           membershipType: profile.membershipType,
           name: profile.name,
-          profileImage: profile.profileImage || profile.profile_image, // Support both naming conventions
+          profileImage: profileImage, 
         };
         
         setUser(extendedUser);
@@ -119,7 +131,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (session?.user) {
       try {
+        // Clear cache to ensure fresh data
+        profileCache.invalidate(session.user.id);
+        
         const profile = await getUserProfile(session.user.id);
+        
+        // Get profile image from either field, validate it
+        const profileImage = validateProfileImage(
+          profile?.profileImage || profile?.profile_image, 
+          session.user.id
+        );
+
+        console.log("Auth change - profile image:", profileImage);
         
         // Create an extended user with profile data
         const extendedUser: ExtendedUser = {
@@ -127,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           streak: profile?.streak || 0,
           membershipType: profile?.membershipType || 'Basic',
           name: profile?.name || '',
-          profileImage: profile?.profileImage || profile?.profile_image || '',
+          profileImage: profileImage || '',
         };
         
         setUser(extendedUser);

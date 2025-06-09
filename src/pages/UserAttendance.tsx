@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { CalendarCheck, RefreshCw, Download, Search, Calendar as CalendarIcon } from "lucide-react";
+import { CalendarCheck, RefreshCw, Search, Calendar as CalendarIcon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, startOfDay, parseISO, isEqual } from "date-fns";
 import toast from "react-hot-toast";
 import { MainLayout } from "../components/Layout/MainLayout";
@@ -148,37 +148,6 @@ const UserAttendance: React.FC = () => {
     await loadUsersData();
     setRefreshing(false);
     toast.success("Attendance data refreshed");
-  };
-
-  const handleExport = () => {
-    try {
-      let csvContent = "User Name,Email,Date,Check-in Time\n";
-      
-      users.forEach(user => {
-        user.attendances.forEach(attendance => {
-          csvContent += [
-            user.name || "Unknown",
-            user.email || "Unknown",
-            new Date(attendance.check_in_time).toLocaleDateString(),
-            new Date(attendance.check_in_time).toLocaleTimeString()
-          ].join(",") + "\n";
-        });
-      });
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.setAttribute("href", url);
-      a.setAttribute('download', `attendance_export_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      toast.success("Attendance data exported successfully");
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      toast.error("Failed to export data");
-    }
   };
 
   // Helper to get attendance for a specific day and user
@@ -335,12 +304,8 @@ const UserAttendance: React.FC = () => {
                 <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-1" />
-                Export
-              </Button>
             </div>
-          </div>
+          </div>  
           
           {loading ? (
             <div className="space-y-3">

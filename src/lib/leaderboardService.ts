@@ -14,8 +14,10 @@ export interface LeaderboardUser {
  * @param limit The maximum number of users to return
  * @returns Array of users with their XP points and rank
  */
-export const getGlobalLeaderboard = async (limit: number = 10): Promise<LeaderboardUser[]> => {
+export const getGlobalLeaderboard = async (limit: number = 30): Promise<LeaderboardUser[]> => {
   try {
+    console.log(`Fetching global leaderboard with limit: ${limit}`);
+    
     // Get users sorted by XP points
     const { data, error } = await supabase
       .from('profiles')
@@ -29,10 +31,13 @@ export const getGlobalLeaderboard = async (limit: number = 10): Promise<Leaderbo
     }
     
     // Add rank to each user
-    return data.map((user, index) => ({
+    const rankedData = data.map((user, index) => ({
       ...user,
       rank: index + 1
     })) as LeaderboardUser[];
+    
+    console.log(`Global leaderboard returned ${rankedData.length} users`);
+    return rankedData;
   } catch (error) {
     console.error('Error in getGlobalLeaderboard:', error);
     return [];
@@ -99,8 +104,10 @@ export const getUserLeaderboardPosition = async (userId: string): Promise<{ rank
  * @param limit The maximum number of users to return
  * @returns Array of users with their XP earned in the period and rank
  */
-export const getTimePeriodLeaderboard = async (period: 'weekly' | 'monthly', limit: number = 10): Promise<LeaderboardUser[]> => {
+export const getTimePeriodLeaderboard = async (period: 'weekly' | 'monthly', limit: number = 30): Promise<LeaderboardUser[]> => {
   try {
+    console.log(`Fetching ${period} leaderboard with limit: ${limit}`);
+    
     const now = new Date();
     let startDate = new Date();
     
@@ -129,7 +136,7 @@ export const getTimePeriodLeaderboard = async (period: 'weekly' | 'monthly', lim
     }
     
     // Add rank to each user
-    return data.map((user: any, index: number) => ({
+    const rankedData = data.map((user: any, index: number) => ({
       id: user.user_id,
       name: user.name || 'Unknown User',
       profile_image: user.profile_image,
@@ -137,6 +144,9 @@ export const getTimePeriodLeaderboard = async (period: 'weekly' | 'monthly', lim
       level: user.level || 1,
       rank: index + 1
     })) as LeaderboardUser[];
+    
+    console.log(`${period} leaderboard returned ${rankedData.length} users`);
+    return rankedData;
   } catch (error) {
     console.error(`Error in get${period.charAt(0).toUpperCase() + period.slice(1)}Leaderboard:`, error);
     return [];

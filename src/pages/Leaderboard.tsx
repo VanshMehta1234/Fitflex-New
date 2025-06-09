@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { MainLayout } from '../components/Layout/MainLayout';
 import { useLeaderboard } from '../context/LeaderboardContext';
 import { useAuth } from '../context/AuthContext';
@@ -84,11 +84,22 @@ export default function Leaderboard() {
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(leaderboard.length / ITEMS_PER_PAGE));
   
+  // Debug logging
+  useEffect(() => {
+    console.log(`Leaderboard data: ${leaderboard.length} items`);
+    console.log(`Total pages: ${totalPages}`);
+    console.log(`Should show pagination: ${leaderboard.length > ITEMS_PER_PAGE}`);
+  }, [leaderboard.length, totalPages]);
+  
   // Get current page data
   const currentLeaderboardData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return leaderboard.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const items = leaderboard.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    console.log(`Current page ${currentPage}: showing ${items.length} items`);
+    return items;
   }, [leaderboard, currentPage]);
+
+  console.log('Current leaderboard data:', currentLeaderboardData);
   
   // Page navigation
   const goToNextPage = () => {
@@ -271,39 +282,37 @@ export default function Leaderboard() {
                         ))}
                       </div>
                       
-                      {/* Pagination controls */}
-                      {leaderboard.length > ITEMS_PER_PAGE && (
-                        <div className="flex items-center justify-between border-t p-4">
-                          <div className="text-sm text-muted-foreground">
-                            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, leaderboard.length)} of {leaderboard.length}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={goToPrevPage}
-                              disabled={currentPage === 1}
-                              className="h-8 w-8 p-0"
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                              <span className="sr-only">Previous page</span>
-                            </Button>
-                            <div className="text-sm">
-                              Page {currentPage} of {totalPages}
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={goToNextPage}
-                              disabled={currentPage === totalPages}
-                              className="h-8 w-8 p-0"
-                            >
-                              <ChevronRight className="h-4 w-4" />
-                              <span className="sr-only">Next page</span>
-                            </Button>
-                          </div>
+                      {/* Pagination controls - always show */}
+                      <div className="flex items-center justify-between border-t p-4">
+                        <div className="text-sm text-muted-foreground">
+                          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, leaderboard.length)} of {leaderboard.length}
                         </div>
-                      )}
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToPrevPage}
+                            disabled={currentPage === 1}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            <span className="sr-only">Previous page</span>
+                          </Button>
+                          <div className="text-sm">
+                            Page {currentPage} of {totalPages}
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={goToNextPage}
+                            disabled={currentPage === totalPages}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                            <span className="sr-only">Next page</span>
+                          </Button>
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8">

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import ThemeToggle from '../ThemeToggle';
 import { Button } from '../ui/button';
-import { Avatar } from '../ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { getInitials } from '../../lib/profileService';
 import { Sidebar } from './Sidebar';
 import { Menu, ChevronLeft, Moon, Sun, Home, User } from 'lucide-react';
@@ -83,11 +83,17 @@ export function MainLayout({ children }: MainLayoutProps) {
           <div className="flex items-center gap-4">
             <ThemeToggle variant="ghost" />
             <Avatar
-              src={user?.profileImage}
-              alt={user?.name || user?.email?.split('@')[0] || 'User'}
               className="border border-border cursor-pointer"
               onClick={() => navigate('/profile')}
-            />
+            >
+              <AvatarImage 
+                src={user?.profileImage} 
+                alt={user?.name || user?.email?.split('@')[0] || 'User'} 
+              />
+              <AvatarFallback>
+                {getInitials(user?.name || user?.email?.split('@')[0] || 'User')}
+              </AvatarFallback>
+            </Avatar>
           </div>
         </header>
         
@@ -112,11 +118,17 @@ export function MainLayout({ children }: MainLayoutProps) {
               
               {/* User Avatar */}
               <Avatar
-                src={user?.profileImage}
-                alt={user?.name || user?.email?.split('@')[0] || 'User'}
                 className="border border-border"
                 onClick={() => navigate('/profile')}
-              />
+              >
+                <AvatarImage 
+                  src={user?.profileImage} 
+                  alt={user?.name || user?.email?.split('@')[0] || 'User'} 
+                />
+                <AvatarFallback>
+                  {getInitials(user?.name || user?.email?.split('@')[0] || 'User')}
+                </AvatarFallback>
+              </Avatar>
             </div>
           </div>
         </header>

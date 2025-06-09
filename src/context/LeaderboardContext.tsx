@@ -34,9 +34,9 @@ export function LeaderboardProvider({ children }: { children: React.ReactNode })
       
       // Fetch leaderboard based on selected period
       if (selectedPeriod === 'all-time') {
-        data = await getGlobalLeaderboard(10);
+        data = await getGlobalLeaderboard(30);
       } else {
-        data = await getTimePeriodLeaderboard(selectedPeriod, 10);
+        data = await getTimePeriodLeaderboard(selectedPeriod, 20);
       }
       
       setLeaderboard(data);

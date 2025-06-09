@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
+import toast from 'react-hot-toast';
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -57,7 +58,7 @@ const Signup: React.FC = () => {
       }
       
       navigate('/login');
-      alert('Check your email for the confirmation link');
+      toast.success('Check your email for the confirmation link');
     } catch (err: any) {
       setError(err.message || 'An error occurred during signup');
     } finally {

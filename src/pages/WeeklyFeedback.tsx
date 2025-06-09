@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainLayout } from "../components/Layout/MainLayout";
 import { Button } from "../components/ui/button";
 import { Textarea } from "../components/ui/textarea";
@@ -119,6 +119,7 @@ export default function WeeklyFeedback() {
   const [comment, setComment] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hasAnyRating, setHasAnyRating] = useState(false);
   const [currentWeek, setCurrentWeek] = useState(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 1);
@@ -128,6 +129,14 @@ export default function WeeklyFeedback() {
   });
 
   const currentFeedback = getCurrentWeekFeedback();
+
+  // Check if user has provided any rating
+  useEffect(() => {
+    const hasRating = Object.keys(ratings).some(category => 
+      Object.values(ratings[category]).some(rating => rating > 0)
+    );
+    setHasAnyRating(hasRating);
+  }, [ratings]);
 
   const handleRatingChange = (category: string, question: string, value: number) => {
     setRatings(prev => ({
@@ -140,11 +149,8 @@ export default function WeeklyFeedback() {
   };
 
   const validateForm = () => {
-    // Check if at least one rating is provided in the current category
-    const categoryRatings = ratings[activeCategory];
-    const hasRating = Object.values(categoryRatings).some(rating => rating > 0);
-    
-    if (!hasRating) {
+    // Check if at least one rating is provided
+    if (!hasAnyRating) {
       toast.error("Please provide at least one rating");
       return false;
     }
@@ -158,10 +164,22 @@ export default function WeeklyFeedback() {
     setSubmitting(true);
     
     try {
-      // Prepare feedback data with selected category and its ratings
+      // Collect all ratings from all categories
+      const allRatings: Record<string, number> = {};
+      
+      // Merge all rating categories into one object
+      Object.keys(ratings).forEach(category => {
+        Object.entries(ratings[category]).forEach(([key, value]) => {
+          if (value > 0) {
+            allRatings[`${category}_${key}`] = value;
+          }
+        });
+      });
+      
+      // Prepare feedback data with all ratings
       const feedbackData: WeeklyFeedbackData = {
-        category: activeCategory,
-        ratings: ratings[activeCategory],
+        category: activeCategory, // Use active category as primary category
+        ratings: allRatings,
         comments: comment,
         is_anonymous: isAnonymous
       };
@@ -350,7 +368,6 @@ export default function WeeklyFeedback() {
                     </CardContent>
                   </Card>
 
-                  {category.id === 'improvements' && (
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-lg">Additional Comments</CardTitle>
@@ -380,13 +397,14 @@ export default function WeeklyFeedback() {
                         <Button
                           variant="outline"
                           onClick={handlePrevCategory}
-                          disabled={submitting}
+                          disabled={submitting || activeCategory === FEEDBACK_CATEGORIES[0].id}
                         >
                           Previous
                         </Button>
+                        <div className="flex space-x-2">
                         <Button 
                           onClick={handleSubmit} 
-                          disabled={submitting}
+                          disabled={submitting || !hasAnyRating}
                         >
                           {submitting ? (
                             <>
@@ -397,21 +415,17 @@ export default function WeeklyFeedback() {
                             'Submit Feedback'
                           )}
                         </Button>
+                        <Button
+                          onClick={handleNextCategory}
+                          className="gap-2"
+                          disabled={submitting || activeCategory === FEEDBACK_CATEGORIES[FEEDBACK_CATEGORIES.length - 1].id}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        </div>
                       </CardFooter>
                     </Card>
-                  )}
-
-                  {category.id !== 'improvements' && (
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleNextCategory}
-                        className="gap-2"
-                      >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
                 </TabsContent>
               ))}
             </Tabs>
