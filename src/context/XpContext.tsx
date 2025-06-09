@@ -1,34 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { XpTransaction, XpSource } from '../types/xp';
+import { addXpToUser, getUserTotalXp, getUserXpTransactions, LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
+import toast from 'react-hot-toast';
 
 // Constants for XP requirements per level
-export const LEVEL_XP_REQUIREMENTS: Record<number, number> = {
-  1: 0,
-  2: 100,
-  3: 250,
-  4: 450,
-  5: 700,
-  6: 1000,
-  7: 1350,
-  8: 1750,
-  9: 2200,
-  10: 2700,
-  11: 3250,
-  12: 3850,
-  13: 4500,
-  14: 5200,
-  15: 6000,
-  16: 6850,
-  17: 7750,
-  18: 8700,
-  19: 9700,
-  20: 10750
-};
+// Now imported from xpService
 
 interface XpContextType {
   userXp: number;
   userLevel: number;
-  earnXp: (amount: number, reason?: string) => Promise<void>;
+  xpTransactions: XpTransaction[];
+  isLoading: boolean;
+  earnXp: (amount: number, reason: string, source: XpSource) => Promise<boolean>;
   calculateProgress: () => {
     currentLevel: number;
     currentXp: number;
@@ -37,6 +21,7 @@ interface XpContextType {
     percent: number;
   };
   syncUserLevel: () => Promise<void>;
+  refreshXpData: () => Promise<void>;
 }
 
 interface XpProviderProps {
@@ -46,33 +31,18 @@ interface XpProviderProps {
 const XpContext = createContext<XpContextType | undefined>(undefined);
 
 export function XpProvider({ children }: XpProviderProps) {
-  const { user } = useAuth();
+  const { user, refreshUserProfile } = useAuth();
   const [userXp, setUserXp] = useState<number>(0);
   const [userLevel, setUserLevel] = useState<number>(1);
+  const [xpTransactions, setXpTransactions] = useState<XpTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Load user XP and level from local storage on mount
+  // Fetch user's XP data from database on mount and when user changes
   useEffect(() => {
     if (user?.id) {
-      const storedXp = localStorage.getItem(`user_xp_${user.id}`);
-      const storedLevel = localStorage.getItem(`user_level_${user.id}`);
-      
-      if (storedXp) {
-        setUserXp(parseInt(storedXp, 10));
-      }
-      
-      if (storedLevel) {
-        setUserLevel(parseInt(storedLevel, 10));
-      }
+      fetchXpData();
     }
   }, [user?.id]);
-  
-  // Save XP and level to local storage when they change
-  useEffect(() => {
-    if (user?.id) {
-      localStorage.setItem(`user_xp_${user.id}`, userXp.toString());
-      localStorage.setItem(`user_level_${user.id}`, userLevel.toString());
-    }
-  }, [user?.id, userXp, userLevel]);
   
   // Calculate current level based on XP
   const calculateLevel = (xp: number): number => {
@@ -88,11 +58,53 @@ export function XpProvider({ children }: XpProviderProps) {
     return level;
   };
   
+  // Fetch XP data from database
+  const fetchXpData = async () => {
+    if (!user?.id) return;
+    
+    setIsLoading(true);
+    try {
+      // Get user's total XP from profile
+      const totalXp = await getUserTotalXp(user.id);
+      setUserXp(totalXp);
+      
+      // Calculate and set user level
+      const level = calculateLevel(totalXp);
+      setUserLevel(level);
+      
+      // Get XP transactions
+      const transactions = await getUserXpTransactions(user.id);
+      setXpTransactions(transactions);
+      
+      // Also refresh the user profile to ensure it's in sync
+      await refreshUserProfile();
+    } catch (error) {
+      console.error('Error fetching XP data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Function to synchronize user level with XP
   const syncUserLevel = async (): Promise<void> => {
-    const calculatedLevel = calculateLevel(userXp);
-    if (calculatedLevel !== userLevel) {
-      setUserLevel(calculatedLevel);
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      
+      // Get latest XP from database
+      const totalXp = await getUserTotalXp(user.id);
+      setUserXp(totalXp);
+      
+      // Calculate and set user level
+      const calculatedLevel = calculateLevel(totalXp);
+      if (calculatedLevel !== userLevel) {
+        setUserLevel(calculatedLevel);
+      }
+    } catch (error) {
+      console.error('Error syncing user level:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -117,31 +129,48 @@ export function XpProvider({ children }: XpProviderProps) {
   };
   
   // Function to earn XP
-  const earnXp = async (amount: number, reason?: string): Promise<void> => {
+  const earnXp = async (amount: number, reason: string, source: XpSource): Promise<boolean> => {
     if (!user?.id || amount <= 0) {
-      return;
+      return false;
     }
     
-    const newXp = userXp + amount;
-    setUserXp(newXp);
-    
-    // Check if user leveled up
-    const newLevel = calculateLevel(newXp);
-    if (newLevel > userLevel) {
-      setUserLevel(newLevel);
-      // In a real app, we might notify the user about the level up
+    setIsLoading(true);
+    try {
+      // Add XP to user in database
+      const success = await addXpToUser(user.id, amount, reason, source);
+      
+      if (success) {
+        // Refresh XP data from database
+        await fetchXpData();
+        toast.success(`Earned ${amount} XP!`);
+        return true;
+      } else {
+        toast.error('Failed to add XP');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error earning XP:', error);
+      toast.error('Failed to add XP');
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    // In a real app, we would save this to a database
-    console.log(`User earned ${amount} XP${reason ? ` for ${reason}` : ''}`);
+  };
+
+  // Refresh XP data
+  const refreshXpData = async (): Promise<void> => {
+    await fetchXpData();
   };
   
   const value = {
     userXp,
     userLevel,
+    xpTransactions,
+    isLoading,
     earnXp,
     calculateProgress,
-    syncUserLevel
+    syncUserLevel,
+    refreshXpData
   };
   
   return <XpContext.Provider value={value}>{children}</XpContext.Provider>;

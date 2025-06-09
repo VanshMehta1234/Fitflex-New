@@ -68,7 +68,7 @@ export function DailyEngagement() {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       // Award XP
-      await earnXp(xpAmount, `Completing task: ${taskId}`);
+      //await earnXp(xpAmount, `Completing task: ${taskId}`);
       
       // Mark task as completed
       setCompletedTasks(prev => [...prev, taskId]);

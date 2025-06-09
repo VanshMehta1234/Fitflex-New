@@ -13,7 +13,11 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  CalendarCheck,
+  Dumbbell,
+  Share2,
+  Gift
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -44,20 +48,52 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       path: '/profile',
     },
     {
-      icon: Calendar,
+      icon: CalendarCheck,
+      label: 'Attendance',
+      path: '/attendance',
+    },
+    {
+      icon: Dumbbell,
       label: 'Classes',
       path: '/classes',
+    },
+    {
+      icon: Share2,
+      label: 'Refer & Earn',
+      path: '/refer',
+    },
+    {
+      icon: CreditCard,
+      label: 'Weekly Feedback',
+      path: '/weekly-feedback',
     },
     {
       icon: CreditCard,
       label: 'Membership',
       path: '/membership',
     },
-    ...(userRole === 'admin' ? [{
-      icon: BarChart,
-      label: 'Admin',
-      path: '/admin',
-    }] : []),
+    ...(userRole === 'admin' ? [
+      {
+        icon: BarChart,
+        label: 'Admin',
+        path: '/admin',
+      },
+      {
+        icon: CalendarCheck,
+        label: 'Weekly Feedback Analysis',
+        path: '/admin/weekly-feedback',
+      },
+      {
+        icon: CalendarCheck,
+        label: 'User Attendance',
+        path: '/admin/user-attendance',
+      },
+      {
+        icon: Dumbbell,
+        label: 'Manage Classes',
+        path: '/admin/classes',
+      }
+    ] : []),
     {
       icon: Settings,
       label: 'Settings',

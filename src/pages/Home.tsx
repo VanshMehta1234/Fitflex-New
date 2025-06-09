@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { DailyQuoteCard } from '../components/ui/DailyQuoteCard';
 import { FitnessTipCard } from '../components/ui/FitnessTipCard';
-import { LEVEL_XP_REQUIREMENTS } from '../context/XpContext';
+import { LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
 import { useNavigate } from 'react-router-dom';
 
 // Icons
