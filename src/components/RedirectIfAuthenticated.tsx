@@ -8,19 +8,26 @@ const RedirectIfAuthenticated: React.FC = () => {
   const location = useLocation();
   
   useEffect(() => {
-    // Check if this is a password reset flow
+    // Check if this is a password reset flow with a token
     const isResetPasswordPage = location.pathname === '/reset-password';
-    const hash = window.location.hash;
-    const query = new URLSearchParams(location.search);
-    const hasResetToken = hash.includes('type=recovery') || query.get('source') === 'email';
     
-    // If on reset password page with token, don't redirect even if authenticated
-    if (isResetPasswordPage && hasResetToken) {
+    // Look for reset token in hash fragment or query parameters
+    const hash = window.location.hash;
+    const isRecoveryFlow = hash.includes('type=recovery') || hash.includes('access_token=');
+    
+    const query = new URLSearchParams(location.search);
+    const source = query.get('source');
+    const hasResetSource = source === 'email';
+    
+    // If on reset password page with token indicators, don't redirect even if authenticated
+    if (isResetPasswordPage && (isRecoveryFlow || hasResetSource)) {
+      console.log('On reset password page with recovery token - allowing access');
       return;
     }
     
     // If the user is already authenticated, redirect to the dashboard
     if (user && !loading) {
+      console.log('User authenticated - redirecting to home');
       navigate('/home');
     }
   }, [user, loading, navigate, location]);
@@ -33,10 +40,14 @@ const RedirectIfAuthenticated: React.FC = () => {
   // Special case for reset password with token
   const isResetPasswordPage = location.pathname === '/reset-password';
   const hash = window.location.hash;
-  const query = new URLSearchParams(location.search);
-  const hasResetToken = hash.includes('type=recovery') || query.get('source') === 'email';
+  const isRecoveryFlow = hash.includes('type=recovery') || hash.includes('access_token=');
   
-  if (isResetPasswordPage && hasResetToken) {
+  const query = new URLSearchParams(location.search);
+  const source = query.get('source');
+  const hasResetSource = source === 'email';
+  
+  if (isResetPasswordPage && (isRecoveryFlow || hasResetSource)) {
+    console.log('Rendering reset password page even though user is authenticated');
     return <Outlet />;
   }
   

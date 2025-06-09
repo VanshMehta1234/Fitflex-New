@@ -26,16 +26,24 @@ const ResetPassword: React.FC = () => {
   const [tokenVerifying, setTokenVerifying] = useState(true);
   const [passwordUpdated, setPasswordUpdated] = useState(false);
   
+  // Store the token when we find it
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  
   // Check if we have a token in the URL
   useEffect(() => {
     const checkForToken = async () => {
       setTokenVerifying(true);
       setError('');
       
+      console.log('Checking for reset token...');
+      
       // Check for hash fragment (where Supabase puts the token)
       const hash = window.location.hash;
+      console.log('Hash fragment:', hash);
+      
+      // Parse the hash fragment
       const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
+      const token = params.get('access_token');
       const refreshToken = params.get('refresh_token');
       const type = params.get('type');
       
@@ -44,27 +52,32 @@ const ResetPassword: React.FC = () => {
       const tokenInQuery = query.get('token');
       const source = query.get('source');
 
-      console.log('Reset password flow check - Hash:', hash ? 'present' : 'none');
-      console.log('Reset password flow check - Type:', type);
-      console.log('Reset password flow check - Source:', source);
+      console.log('Reset password flow check:');
+      console.log('- Hash token:', token ? 'present' : 'none');
+      console.log('- Token type:', type);
+      console.log('- Source:', source);
       
       // If we have a recovery token or source is email, user is trying to reset password
-      if ((accessToken && type === 'recovery') || tokenInQuery || source === 'email') {
+      if ((token && type === 'recovery') || tokenInQuery || source === 'email') {
         console.log('Reset password flow - Recovery token detected');
         
         try {
           // When we have a recovery token, set the hasToken state to show the password form
           setHasToken(true);
           
-          // If we have access and refresh tokens, validate them but don't exchange them for a session yet
-          if (accessToken && refreshToken) {
+          // Store the token for later use
+          if (token) {
+            console.log('Storing access token for password reset');
+            setAccessToken(token);
+            
             // Check token validity but don't sign in automatically
-            const { data, error } = await supabase.auth.getUser(accessToken);
+            const { data, error } = await supabase.auth.getUser(token);
             
             if (error) {
               console.error('Invalid token:', error);
               setError('Your reset link has expired. Please request a new one.');
               setHasToken(false);
+              setAccessToken(null);
             } else {
               console.log('Valid token for user:', data.user?.email);
             }
@@ -73,11 +86,13 @@ const ResetPassword: React.FC = () => {
           console.error('Error checking token:', err);
           setError('Error verifying your reset link. Please request a new one.');
           setHasToken(false);
+          setAccessToken(null);
         }
       } else {
         // No token present, show the request form
         console.log('No reset token found, showing request form');
         setHasToken(false);
+        setAccessToken(null);
       }
       
       setTokenVerifying(false);
@@ -132,16 +147,26 @@ const ResetPassword: React.FC = () => {
     try {
       setIsUpdatingPassword(true);
       
-      // Get access token from URL hash
-      const hash = window.location.hash;
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      
+      // Check if we have the access token
       if (!accessToken) {
-        setError('Cannot update password. Missing recovery token.');
-        setIsUpdatingPassword(false);
-        return;
+        console.error('Missing recovery token');
+        
+        // Try to get it from URL again
+        const hash = window.location.hash;
+        const params = new URLSearchParams(hash.substring(1));
+        const token = params.get('access_token');
+        
+        if (!token) {
+          setError('Cannot update password. Missing recovery token. Please try the reset link from your email again.');
+          setIsUpdatingPassword(false);
+          return;
+        }
+        
+        // Store the token if found
+        setAccessToken(token);
       }
+      
+      console.log('Updating password with token');
       
       // Update password using the recovery token
       const { error } = await supabase.auth.updateUser({ 
@@ -149,6 +174,8 @@ const ResetPassword: React.FC = () => {
       });
       
       if (error) {
+        console.error('Error updating password:', error);
+        
         if (error.message.includes('same password') || 
             error.message.includes('previously used')) {
           setError('Cannot use your previous password. Please choose a new one.');
@@ -156,6 +183,7 @@ const ResetPassword: React.FC = () => {
                   error.message.includes('invalid')) {
           setError('Your reset link has expired. Please request a new one.');
           setHasToken(false);
+          setAccessToken(null);
         } else {
           setError(error.message);
         }
@@ -174,6 +202,7 @@ const ResetPassword: React.FC = () => {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
+      console.error('Error in handleUpdatePassword:', err);
       setError(err.message || 'An error occurred while updating your password');
     } finally {
       setIsUpdatingPassword(false);
