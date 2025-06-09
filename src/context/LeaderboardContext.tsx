@@ -34,24 +34,16 @@ export function LeaderboardProvider({ children }: { children: React.ReactNode })
       
       // Fetch leaderboard based on selected period
       if (selectedPeriod === 'all-time') {
-        data = await getGlobalLeaderboard(20);
+        data = await getGlobalLeaderboard(10);
       } else {
-        data = await getTimePeriodLeaderboard(selectedPeriod, 20);
+        data = await getTimePeriodLeaderboard(selectedPeriod, 10);
       }
       
       setLeaderboard(data);
+      const { rank, totalUsers: total } = await getUserLeaderboardPosition(user.id);
+      setUserRank(rank);
+      setTotalUsers(total);
       
-      // Get user's rank if not in top 20
-      const userInLeaderboard = data.find(item => item.id === user.id);
-      
-      if (userInLeaderboard) {
-        setUserRank(userInLeaderboard.rank);
-      } else {
-        // Get user's position in the global ranking
-        const { rank, totalUsers: total } = await getUserLeaderboardPosition(user.id);
-        setUserRank(rank);
-        setTotalUsers(total);
-      }
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast.error('Failed to load leaderboard data');

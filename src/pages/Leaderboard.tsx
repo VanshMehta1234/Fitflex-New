@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { MainLayout } from '../components/Layout/MainLayout';
 import { useLeaderboard } from '../context/LeaderboardContext';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +13,9 @@ import {
   User, 
   Clock, 
   RotateCw, 
-  Star 
+  Star,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
@@ -47,6 +49,9 @@ const formatTabName = (tab: string): string => {
   }
 };
 
+// Number of items per page
+const ITEMS_PER_PAGE = 10;
+
 export default function Leaderboard() {
   const { 
     leaderboard, 
@@ -59,6 +64,14 @@ export default function Leaderboard() {
   } = useLeaderboard();
   const { user } = useAuth();
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Reset page when tab changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedPeriod]);
+  
   // Find current user in leaderboard
   const userPosition = useMemo(() => {
     if (!user) return null;
@@ -68,13 +81,35 @@ export default function Leaderboard() {
   // Determine current user's actual rank
   const currentUserRank = userPosition?.rank || userRank;
   
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(leaderboard.length / ITEMS_PER_PAGE));
+  
+  // Get current page data
+  const currentLeaderboardData = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return leaderboard.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [leaderboard, currentPage]);
+  
+  // Page navigation
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+  
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+  
   return (
     <MainLayout>
       <div className="container px-4 py-6 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary-500/10 flex items-center justify-center">
-              <Trophy className="h-5 w-5 text-primary-500" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Trophy className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">Leaderboard</h1>
@@ -129,14 +164,14 @@ export default function Leaderboard() {
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12 border-2 border-primary-500/20">
+                  <Avatar className="h-12 w-12 border-2 border-primary/20">
                     <AvatarImage src={user?.profileImage} alt={user?.name || "User"} />
                     <AvatarFallback>{getInitials(user?.name || "")}</AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium">{user?.name}</p>
                     <div className="flex items-center text-sm text-muted-foreground">
-                      <Star className="h-4 w-4 mr-1 text-primary-500" />
+                      <Star className="h-4 w-4 mr-1 text-primary" />
                       <span>{userPosition?.xp_points || 0} XP</span>
                       <span className="mx-1">•</span>
                       <span>Level {userPosition?.level || 1}</span>
@@ -204,36 +239,72 @@ export default function Leaderboard() {
                       ))}
                     </div>
                   ) : leaderboard.length > 0 ? (
-                    <div className="divide-y divide-border">
-                      {leaderboard.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className={`flex items-center justify-between p-4 ${
-                            item.id === user?.id ? 'bg-primary-50 dark:bg-primary-950/20' : ''
-                          }`}
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center justify-center w-8 h-8">
-                              {getRankIcon(item.rank)}
-                            </div>
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={item.profile_image} alt={item.name} />
-                              <AvatarFallback>{getInitials(item.name || "")}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <span>Level {item.level}</span>
+                    <>
+                      <div className="divide-y divide-border">
+                        {currentLeaderboardData.map((item) => (
+                          <div 
+                            key={item.id} 
+                            className={`flex items-center justify-between p-4 ${
+                              item.id === user?.id ? 'bg-primary-50 dark:bg-primary-950/20' : ''
+                            }`}
+                          >
+                            <div className="flex items-center space-x-4">
+                              <div className="flex items-center justify-center w-8 h-8">
+                                {getRankIcon(item.rank)}
+                              </div>
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={item.profile_image} alt={item.name} />
+                                <AvatarFallback>{getInitials(item.name || "")}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{item.name}</p>
+                                <div className="flex items-center text-xs text-muted-foreground">
+                                  <span>Level {item.level}</span>
+                                </div>
                               </div>
                             </div>
+                            <div className="font-medium flex items-center">
+                              <Star className="h-4 w-4 mr-1 text-yellow-500" />
+                              {item.xp_points} XP
+                            </div>
                           </div>
-                          <div className="font-medium flex items-center">
-                            <Star className="h-4 w-4 mr-1 text-yellow-500" />
-                            {item.xp_points} XP
+                        ))}
+                      </div>
+                      
+                      {/* Pagination controls */}
+                      {leaderboard.length > ITEMS_PER_PAGE && (
+                        <div className="flex items-center justify-between border-t p-4">
+                          <div className="text-sm text-muted-foreground">
+                            Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, leaderboard.length)} of {leaderboard.length}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={goToPrevPage}
+                              disabled={currentPage === 1}
+                              className="h-8 w-8 p-0"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                              <span className="sr-only">Previous page</span>
+                            </Button>
+                            <div className="text-sm">
+                              Page {currentPage} of {totalPages}
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={goToNextPage}
+                              disabled={currentPage === totalPages}
+                              className="h-8 w-8 p-0"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                              <span className="sr-only">Next page</span>
+                            </Button>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8">
                       <Trophy className="h-12 w-12 text-gray-400 mb-2" />

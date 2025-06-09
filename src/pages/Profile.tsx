@@ -76,10 +76,6 @@ export default function Profile() {
     if (!hasChanges) {
       toast('No changes to save', {
         icon: 'ℹ️',
-        style: {
-          background: '#3b82f6',
-          color: '#fff',
-        },
       });
       return;
     }

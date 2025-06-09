@@ -69,28 +69,42 @@ const AppRoutes = () => (
 function App() {
   // Use memoized toast configuration to prevent re-renders
   const toastOptions = useMemo(() => ({
-    position: "top-center" as const,
+    position: 'top-center' as const,
+    duration: 3000,
     toastOptions: {
-      duration: 3000,
-      style: {
-        background: '#363636',
-        color: '#fff',
-      },
       success: {
-        duration: 3000,
+        className: '!bg-background !text-foreground',
+        iconTheme: {
+          primary: 'hsl(var(--primary))',
+          secondary: 'white',
+        },
         style: {
-          background: '#22c55e',
-          color: '#fff',
+          border: '1px solid hsl(var(--border))',
+          padding: '16px',
+          color: 'var(--foreground)',
         },
       },
       error: {
-        duration: 4000,
-        style: {
-          background: '#ef4444',
-          color: '#fff',
+        className: '!bg-background !text-foreground',
+        iconTheme: {
+          primary: 'hsl(var(--destructive))',
+          secondary: 'white',
         },
-      }
-    }
+        style: {
+          border: '1px solid hsl(var(--border))',
+          padding: '16px',
+          color: 'var(--foreground)',
+        },
+      },
+      loading: {
+        className: '!bg-background !text-foreground',
+        style: {
+          border: '1px solid hsl(var(--border))',
+          padding: '16px',
+          color: 'var(--foreground)',
+        },
+      },
+    },
   }), []);
 
   return (
