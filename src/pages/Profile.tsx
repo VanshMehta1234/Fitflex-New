@@ -13,7 +13,6 @@ import { uploadProfileImage, getInitials } from '../lib/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useXp } from '../context/XpContext';
 import toast from 'react-hot-toast';
-import { validateProfileImage } from '../lib/utils';
 import { 
   Camera, 
   User, 
@@ -72,8 +71,8 @@ export default function Profile() {
     
     // Check if there are any changes
     const hasChanges = 
-      formData.name !== user?.name ||
-      formData.profileImage !== user?.profileImage;
+      formData.name !== user?.name || 
+      imagePreview !== null; // If imagePreview exists, an image was uploaded
     
     if (!hasChanges) {
       toast('No changes to save', {
@@ -235,7 +234,7 @@ export default function Profile() {
                   <div className="h-20 w-20 rounded-full border-4 border-white dark:border-gray-800 shadow-md overflow-hidden relative bg-white dark:bg-gray-800 mb-3">
                     {formData.profileImage ? (
                       <img 
-                        src={validateProfileImage(formData.profileImage, user?.id)} 
+                        src={formData.profileImage} 
                         alt={formData.name} 
                         className="h-full w-full object-cover"
                         loading="lazy"
@@ -285,7 +284,7 @@ export default function Profile() {
                       <div className="h-24 w-24 rounded-full border-4 border-white dark:border-gray-800 shadow-md overflow-hidden relative bg-white dark:bg-gray-800">
                         {formData.profileImage ? (
                           <img 
-                            src={validateProfileImage(formData.profileImage, user?.id)} 
+                            src={formData.profileImage} 
                             alt={formData.name} 
                             className="h-full w-full object-cover"
                             loading="lazy"
@@ -470,7 +469,7 @@ export default function Profile() {
                     {imagePreview || formData.profileImage ? (
                       <>
                         <img 
-                          src={validateProfileImage(imagePreview || formData.profileImage, user?.id)} 
+                          src={imagePreview || formData.profileImage} 
                           alt={formData.name} 
                           className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
                           onError={(e) => {
@@ -527,7 +526,7 @@ export default function Profile() {
                       {imagePreview || formData.profileImage ? (
                         <>
                           <img 
-                            src={validateProfileImage(imagePreview || formData.profileImage, user?.id)} 
+                            src={imagePreview || formData.profileImage} 
                             alt={formData.name} 
                             className="h-full w-full object-cover transition-opacity group-hover:opacity-80"
                             onError={(e) => {

@@ -18,34 +18,6 @@ export function formatDate(input: string | number | Date): string {
   });
 }
 
-/**
- * Validates and logs information about a profile image
- * This helps debug issues with profile images not displaying
- */
-export function validateProfileImage(src: string | undefined | null, userId: string = 'unknown'): string | undefined {
-  if (!src) {
-    console.log(`Profile image for ${userId} is empty`);
-    return undefined;
-  }
-  
-  // Check if it's a data URL
-  if (src.startsWith('data:image/')) {
-    // Data URLs are valid
-    console.log(`Profile image for ${userId} is a data URL`);
-    return src;
-  }
-  
-  // Check if it's an http(s) URL
-  if (src.startsWith('http://') || src.startsWith('https://')) {
-    console.log(`Profile image for ${userId} is an HTTP URL: ${src.substring(0, 30)}...`);
-    return src;
-  }
-  
-  // If it's neither, it might be invalid
-  console.warn(`Profile image for ${userId} has an invalid format: ${src.substring(0, 30)}...`);
-  return src;
-}
-
 export const measurePerformance = async (
   label: string,
   callback: () => Promise<any>

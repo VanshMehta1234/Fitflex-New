@@ -4,7 +4,6 @@ import { supabase } from '../supabase';
 import { ExtendedUser, AppUser } from '../types/user';
 import { ProfileUpdateData, updateUserProfile, getUserProfile, profileCache, UserProfile } from '../lib/profileService';
 import toast from 'react-hot-toast';
-import { validateProfileImage } from '../lib/utils';
 
 export type UserRole = 'user' | 'admin';
 
@@ -101,13 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = await getUserProfile(user.id);
       
       if (profile) {
-        // Get profile image from either field, validate it
-        const profileImage = validateProfileImage(
-          profile.profileImage || profile.profile_image, 
-          user.id
-        );
-
-        console.log("Refreshed profile image:", profileImage);
+        // Get profile image
+        const profileImage = profile.profileImage || profile.profile_image;
         
         // Create an extended user with profile data
         const extendedUser: ExtendedUser = {
@@ -137,13 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const profile = await getUserProfile(session.user.id);
         
-        // Get profile image from either field, validate it
-        const profileImage = validateProfileImage(
-          profile?.profileImage || profile?.profile_image, 
-          session.user.id
-        );
-
-        console.log("Auth change - profile image:", profileImage);
+        // Get profile image
+        const profileImage = profile?.profileImage || profile?.profile_image;
         
         // Create an extended user with profile data
         const extendedUser: ExtendedUser = {
