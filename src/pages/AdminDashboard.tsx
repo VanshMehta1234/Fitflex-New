@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase';
 import '../styles/Admin.css';
+import { getAllProfilesWithCache, invalidateAllProfilesCache } from '../lib/adminService';
 
 type Profile = {
   id: string;
@@ -23,22 +24,11 @@ const AdminDashboard: React.FC = () => {
       try {
         setLoading(true);
         
-        // Fetch profiles
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*');
+        // Fetch profiles using cache
+        const profilesData = await getAllProfilesWithCache();
         
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          return;
-        }
-
-        // Get user emails by querying auth.users (would be done server-side in a real app)
-        // This is a simplified approach for the example
-        const profiles = profilesData || [];
-        
-        // Set the profiles with emails
-        setProfiles(profiles);
+        // Set the profiles
+        setProfiles(profilesData);
       } catch (error) {
         console.error('Error in fetchProfiles:', error);
       } finally {
@@ -70,6 +60,8 @@ const AdminDashboard: React.FC = () => {
       setProfiles(profiles.map(profile => 
         profile.id === userId ? { ...profile, role: newRole } : profile
       ));
+      // Invalidate cache after role change
+      invalidateAllProfilesCache();
     } catch (error) {
       console.error('Error in handleRoleChange:', error);
     }

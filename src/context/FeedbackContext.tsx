@@ -419,7 +419,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       setIsAdminLoading(false);
       isFetchingAdminData.current = false;
     }
-  }, [user, userRole, adminFeedbackForms]);  // Add dependencies to ensure function has access to latest values
+  }, [user, userRole]);
 
   // Submit weekly feedback
   const submitWeeklyFeedback = useCallback(async (feedbackData: WeeklyFeedbackData): Promise<FeedbackForm | null> => {

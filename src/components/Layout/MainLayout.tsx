@@ -65,7 +65,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground transition-colors duration-200 overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground transition-colors duration-200">
       {/* Sidebar - only visible on larger screens by default */}
       <div className={cn("hidden md:block h-screen sticky top-0")}>
         <Sidebar />
@@ -77,7 +77,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
       
       {/* Main content */}
-      <div className="flex flex-col flex-1 w-full h-screen overflow-hidden">
+      <div className="flex flex-col flex-1 w-full h-screen">
         {/* Desktop Header with Theme Toggle - Only visible on desktop */}
         <header className="hidden md:flex h-16 items-center justify-end px-6 border-b border-border bg-card">
           <div className="flex items-center gap-4">

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFeedback, FeedbackForm } from "../../context/FeedbackContext";
+import { FeedbackForm } from "../../context/FeedbackContext";
 import { useAuth } from "../../context/AuthContext";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
@@ -34,9 +33,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
@@ -74,6 +71,196 @@ const formatDate = (dateString: string): string => {
   });
 };
 
+// Define Props interface for IndividualFeedback
+interface IndividualFeedbackProps {
+  filteredFeedback: FeedbackForm[];
+  isAdminLoading: boolean;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+  categoryFilter: string;
+  setCategoryFilter: (filter: string) => void;
+  weekFilter: string;
+  setWeekFilter: (filter: string) => void;
+  categories: string[];
+  weeks: string[];
+  setSortBy: (sortBy: string) => void;
+  setSortOrder: (sortOrder: "asc" | "desc") => void;
+  setViewFeedback: (feedback: FeedbackForm | null) => void;
+}
+
+// Define IndividualFeedback component
+const IndividualFeedbackComponent: React.FC<IndividualFeedbackProps> = ({
+  filteredFeedback,
+  isAdminLoading,
+  searchTerm,
+  setSearchTerm,
+  categoryFilter,
+  setCategoryFilter,
+  weekFilter,
+  setWeekFilter,
+  categories,
+  weeks,
+  setSortBy,
+  setSortOrder,
+  setViewFeedback,
+}) => {
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row gap-4 justify-between">
+        <div className="flex-1 w-full md:max-w-md">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search feedback..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={weekFilter} onValueChange={setWeekFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Filter by week" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Weeks</SelectItem>
+              {weeks.map(week => (
+                <SelectItem key={week} value={week}>
+                  Week {week.split('-')[1]}, {week.split('-')[0]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1">
+                <Filter className="h-4 w-4" />
+                Sort
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('desc'); }}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('asc'); }}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSortBy('rating'); setSortOrder('desc'); }}>
+                Highest Rating
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setSortBy('rating'); setSortOrder('asc'); }}>
+                Lowest Rating
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      
+      <Card>
+        <CardContent className="p-0">
+          {isAdminLoading ? (
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-center p-4">
+                <RotateCw className="h-6 w-6 animate-spin text-primary mr-2" />
+                <p>Loading feedback data...</p>
+              </div>
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          ) : filteredFeedback.length > 0 ? (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Week</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Average Rating</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredFeedback.map(feedback => (
+                    <TableRow key={feedback.id}>
+                      <TableCell className="font-medium">
+                        {formatDate(feedback.submitted_at)}
+                      </TableCell>
+                      <TableCell>
+                        {feedback.week_number ? 
+                          `Week ${feedback.week_number}, ${feedback.year}` : 
+                          "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {feedback.is_anonymous 
+                          ? <Badge variant="outline">Anonymous</Badge> 
+                          : feedback.user?.name || "Unknown User"}
+                      </TableCell>
+                      <TableCell>
+                        {feedback.category.charAt(0).toUpperCase() + feedback.category.slice(1)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <span className="font-medium mr-1">
+                            {calculateAverageRating(feedback.ratings).toFixed(1)}
+                          </span>
+                          <span className="text-yellow-400 text-sm">★</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setViewFeedback(feedback)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 text-center">
+              <MessageSquare className="h-10 w-10 text-muted-foreground mb-2" />
+              <h3 className="font-medium">No feedback found</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {searchTerm || categoryFilter !== 'all' || weekFilter !== 'all'
+                  ? "Try adjusting your search or filters"
+                  : "No feedback has been submitted yet"}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Wrap IndividualFeedbackComponent with React.memo
+const IndividualFeedback = React.memo(IndividualFeedbackComponent);
+
 // Using React.memo to prevent unnecessary re-renders
 const WeeklyFeedbackAnalysis = () => {
   console.log("WeeklyFeedbackAnalysis - Component rendering");
@@ -95,22 +282,66 @@ const WeeklyFeedbackAnalysis = () => {
   useEffect(() => {
     console.log(`WeeklyFeedbackAnalysis - adminFeedbackForms changed, count: ${adminFeedbackForms.length}`);
     //fetch directly from the database
-    const fetchData = async () => {
-      const response = await getFeedbackData();
-      if (response.data) {
-        setAdminFeedbackForms(response.data as FeedbackForm[]);
-      }
-      setIsAdminLoading(false);
-    };
+    // const fetchData = async () => { // This fetchData is no longer needed due to getFeedbackData being called in its own useEffect
+    //   await getFeedbackData(); // getFeedbackData now sets state directly
+    //   // setIsAdminLoading(false); // This is also handled by getFeedbackData
+    // };
     
     // Only fetch data if we don't have any yet
-    if (adminFeedbackForms.length === 0) {
-      fetchData();
-    }
-  }, [adminFeedbackForms.length]);
+    // if (adminFeedbackForms.length === 0) { // This condition can be handled by getFeedbackData or its calling useEffect
+    //   fetchData();
+    // }
+  }, [adminFeedbackForms.length]); // eslint-disable-line react-hooks/exhaustive-deps 
+  // TODO: Fix dependencies for getFeedbackData or refactor / This useEffect might need re-evaluation or removal
   
+  // Function to enrich feedback data with user information
+  const enrichWithUserData = useCallback(async (feedbackData: any[]): Promise<FeedbackForm[]> => {
+    const uniqueUserIds = Array.from(new Set(
+      feedbackData
+        .filter(form => !form.is_anonymous && form.user_id)
+        .map(form => form.user_id)
+    ));
+
+    if (uniqueUserIds.length === 0) {
+      return feedbackData.map(form => ({ ...form, user: form.is_anonymous ? null : undefined })) as FeedbackForm[];
+    }
+
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, name, email, profile_image")
+      .in("id", uniqueUserIds);
+
+    if (profilesError) {
+      console.error("Error fetching user profiles:", profilesError);
+      // Decide how to handle this - perhaps return data without user info or throw
+      return feedbackData.map(form => ({ ...form, user: form.is_anonymous ? null : undefined })) as FeedbackForm[];
+    }
+
+    const userProfilesMap: Record<string, any> = {};
+    if (profilesData) {
+      profilesData.forEach(profile => {
+        userProfilesMap[profile.id] = profile;
+      });
+    }
+
+    return feedbackData.map(form => {
+      if (form.is_anonymous || !form.user_id) {
+        return { ...form, user: null };
+      }
+      const profile = userProfilesMap[form.user_id];
+      return {
+        ...form,
+        user: profile ? {
+          name: profile.name || 'Unknown User',
+          email: profile.email || '',
+          profile_image: profile.profile_image || ''
+        } : null // Or some default user object
+      };
+    }) as FeedbackForm[];
+  }, []); // Assuming supabase client is stable and globally available
+
   // Function to fetch feedback data from the database
-  async function getFeedbackData() {
+  const getFeedbackData = useCallback(async () => {
     setIsAdminLoading(true);
     try {
       // Fetch feedback forms
@@ -121,66 +352,25 @@ const WeeklyFeedbackAnalysis = () => {
       
       console.log("Feedback data fetched:", response.data?.length || 0, "records");
       
-      if (response.data && response.data.length > 0) {
-        // Enrich with user data
-        const enrichedData = await enrichWithUserData(response.data);
-        return { data: enrichedData, error: null };
-      }
+      // Enrich with user data - ensure enrichWithUserData is stable or memoized if it uses props/state
+      const enrichedData = response.data && response.data.length > 0 
+        ? await enrichWithUserData(response.data) 
+        : [];
+
+      setAdminFeedbackForms(enrichedData);
       
-      return response;
     } catch (error) {
       console.error("Error fetching feedback data:", error);
       toast.error("Failed to load feedback data");
-      return { data: null, error };
+      setAdminFeedbackForms([]); // Clear data on error
+    } finally {
+      setIsAdminLoading(false); // Ensure loading is false after try/catch/finally
     }
-  }
-  
-  // Function to enrich feedback data with user information
-  async function enrichWithUserData(feedbackData: any[]): Promise<FeedbackForm[]> {
-    // Extract unique user IDs from non-anonymous feedback
-    const uniqueUserIds = Array.from(new Set(
-      feedbackData
-        .filter(form => !form.is_anonymous)
-        .map(form => form.user_id)
-    ));
-    
-    if (uniqueUserIds.length === 0) {
-      // No users to fetch, return as is
-      return feedbackData as FeedbackForm[];
-    }
-    
-    // Fetch user profiles
-    const { data: profilesData } = await supabase
-      .from("profiles")
-      .select("id, name, email, profile_image")
-      .in("id", uniqueUserIds);
-    
-    // Create a map of user profiles by ID for quick lookup
-    const userProfiles: Record<string, any> = {};
-    if (profilesData) {
-      profilesData.forEach(profile => {
-        userProfiles[profile.id] = profile;
-      });
-    }
-    
-    // Enrich feedback data with user information
-    return feedbackData.map(form => {
-      if (form.is_anonymous) {
-        return { ...form, user: null };
-      }
-      
-      const profile = userProfiles[form.user_id];
-      
-      return {
-        ...form,
-        user: profile ? {
-          name: profile.name || 'Unknown User',
-          email: profile.email || '',
-          profile_image: profile.profile_image || ''
-        } : null
-      };
-    }) as FeedbackForm[];
-  }
+  }, [setIsAdminLoading, enrichWithUserData]); 
+  // It's crucial that enrichWithUserData is stable for this to work without adding it to dependencies.
+  // If enrichWithUserData is defined within WeeklyFeedbackAnalysis and not memoized, it should be added here,
+  // or preferably, also wrapped in useCallback or moved outside the component if it doesn't rely on component scope.
+  // Re-added enrichWithUserData to dependency array for getFeedbackData, as it is defined within the component scope.
 
   // Ensure user is admin
   useEffect(() => {
@@ -189,6 +379,14 @@ const WeeklyFeedbackAnalysis = () => {
       navigate('/');
     }
   }, [user, userRole, navigate]);
+  
+  // Initial data fetch effect
+  useEffect(() => {
+    // The initial fetch of feedback data.
+    // getFeedbackData is wrapped in useCallback, so this effect only re-runs if getFeedbackData identity changes.
+    // (which it shouldn't if its own dependencies are stable).
+    getFeedbackData();
+  }, [getFeedbackData]);
 
   // Handle refresh with useCallback to prevent recreation on every render
   const handleRefresh = useCallback(async () => {
@@ -196,21 +394,16 @@ const WeeklyFeedbackAnalysis = () => {
     
     setIsRefreshing(true);
     try {
-      const response = await getFeedbackData();
-      if (response.data) {
-        setAdminFeedbackForms(response.data as FeedbackForm[]);
-        toast.success("Feedback data refreshed");
-      } else if (response.error) {
-        throw response.error;
-      }
+      await getFeedbackData(); // Call the memoized getFeedbackData
+      toast.success("Feedback data refreshed");
     } catch (error) {
       console.error("Error refreshing data:", error);
       toast.error("Failed to refresh data");
     } finally {
       setIsRefreshing(false);
-      setIsAdminLoading(false);
+      // isAdminLoading is handled by getFeedbackData
     }
-  }, [isRefreshing]);
+  }, [isRefreshing, getFeedbackData]); // Added getFeedbackData to dependencies
 
   // Extract categories, weeks for filters - memoized to prevent recalculation on every render
   const categories = useMemo(() => 
@@ -422,160 +615,6 @@ const WeeklyFeedbackAnalysis = () => {
     </div>
   ), [totalFeedbacks, uniqueUserCount, weeklyFeedbacks.length, weeks.length, avgTotalRating, categories, avgRatings, adminFeedbackForms, setViewFeedback]);
 
-  // Component for Individual Feedback tab - memoized to prevent recreation on every render
-  const IndividualFeedback = useMemo(() => () => (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 justify-between">
-        <div className="flex-1 w-full md:max-w-md">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search feedback..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={weekFilter} onValueChange={setWeekFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by week" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Weeks</SelectItem>
-              {weeks.map(week => (
-                <SelectItem key={week} value={week}>
-                  Week {week.split('-')[1]}, {week.split('-')[0]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1">
-                <Filter className="h-4 w-4" />
-                Sort
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('desc'); }}>
-                Newest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSortBy('date'); setSortOrder('asc'); }}>
-                Oldest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSortBy('rating'); setSortOrder('desc'); }}>
-                Highest Rating
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setSortBy('rating'); setSortOrder('asc'); }}>
-                Lowest Rating
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      
-      <Card>
-        <CardContent className="p-0">
-          {isAdminLoading ? (
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-center p-4">
-                <RotateCw className="h-6 w-6 animate-spin text-primary mr-2" />
-                <p>Loading feedback data...</p>
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ) : filteredFeedback.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Week</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Average Rating</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFeedback.map(feedback => (
-                    <TableRow key={feedback.id}>
-                      <TableCell className="font-medium">
-                        {formatDate(feedback.submitted_at)}
-                      </TableCell>
-                      <TableCell>
-                        {feedback.week_number ? 
-                          `Week ${feedback.week_number}, ${feedback.year}` : 
-                          "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {feedback.is_anonymous 
-                          ? <Badge variant="outline">Anonymous</Badge> 
-                          : feedback.user?.name || "Unknown User"}
-                      </TableCell>
-                      <TableCell>
-                        {feedback.category.charAt(0).toUpperCase() + feedback.category.slice(1)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <span className="font-medium mr-1">
-                            {calculateAverageRating(feedback.ratings).toFixed(1)}
-                          </span>
-                          <span className="text-yellow-400 text-sm">★</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => setViewFeedback(feedback)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-center">
-              <MessageSquare className="h-10 w-10 text-muted-foreground mb-2" />
-              <h3 className="font-medium">No feedback found</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {searchTerm || categoryFilter !== 'all' || weekFilter !== 'all'
-                  ? "Try adjusting your search or filters"
-                  : "No feedback has been submitted yet"}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  ), [filteredFeedback, isAdminLoading, searchTerm, categoryFilter, weekFilter, categories, weeks, setSortBy, setSortOrder, setViewFeedback]);
-
   return (
     <MainLayout>
       <div className="container px-4 py-6 max-w-7xl mx-auto">
@@ -637,7 +676,21 @@ const WeeklyFeedbackAnalysis = () => {
           </TabsContent>
           
           <TabsContent value="individual">
-            <IndividualFeedback />
+            <IndividualFeedback
+              filteredFeedback={filteredFeedback}
+              isAdminLoading={isAdminLoading}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
+              weekFilter={weekFilter}
+              setWeekFilter={setWeekFilter}
+              categories={categories}
+              weeks={weeks}
+              setSortBy={setSortBy}
+              setSortOrder={setSortOrder}
+              setViewFeedback={setViewFeedback}
+            />
           </TabsContent>
         </Tabs>
       </div>

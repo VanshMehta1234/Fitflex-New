@@ -44,9 +44,16 @@ export function ClassProvider({ children }: { children: ReactNode }) {
 
   // Refresh classes
   const refreshClasses = async () => {
+    console.log('=== REFRESH CLASSES CALLED ===');
+    console.log('Stack trace:', new Error().stack);
+    
     setIsLoading(true);
     try {
+      console.time('refreshClasses');
       const classesData = await getClassesWithAvailability();
+      console.timeEnd('refreshClasses');
+      
+      console.log(`Retrieved ${classesData.length} classes`);
       setClasses(classesData);
       setError(null);
     } catch (err) {

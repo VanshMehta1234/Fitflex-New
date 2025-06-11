@@ -90,32 +90,43 @@ export const getClassesWithAvailability = async (): Promise<Class[]> => {
     if (classError) throw classError;
     if (!classes) return [];
 
-    // For each class, get the count of bookings that are not cancelled
-    const classesWithAvailability = await Promise.all(
-      classes.map(async (classItem) => {
-        const { data: bookings, error: bookingsError } = await supabase
-          .from('class_bookings')
-          .select('id')
-          .eq('class_id', classItem.id)
-          .neq('attendance_status', 'cancelled');
+    // Fetch all relevant bookings
+    const { data: allBookings, error: bookingsError } = await supabase
+      .from('class_bookings')
+      .select('class_id')
+      .neq('attendance_status', 'cancelled');
 
-        if (bookingsError) {
-          console.error('Error fetching bookings count:', bookingsError);
-          return {
-            ...classItem,
-            available_spots: classItem.capacity,
-          };
+    if (bookingsError) {
+      console.error('Error fetching all bookings:', bookingsError);
+      // If fetching all bookings fails, return classes with capacity as available_spots
+      // or handle error as appropriate for your application
+      return classes.map(classItem => ({
+        ...classItem,
+        available_spots: classItem.capacity,
+      }));
+    }
+
+    // Create a booking counts map
+    const bookingCountsMap = new Map<string, number>();
+    if (allBookings) {
+      for (const booking of allBookings) {
+        // Ensure booking.class_id is not null or undefined before using it as a key
+        if (booking.class_id) {
+          bookingCountsMap.set(booking.class_id, (bookingCountsMap.get(booking.class_id) || 0) + 1);
         }
+      }
+    }
 
-        const bookedSpots = bookings?.length || 0;
-        const availableSpots = classItem.capacity - bookedSpots;
+    // Calculate available_spots for each class
+    const classesWithAvailability = classes.map((classItem) => {
+      const bookedSpots = bookingCountsMap.get(classItem.id) || 0;
+      const availableSpots = classItem.capacity - bookedSpots;
 
-        return {
-          ...classItem,
-          available_spots: availableSpots,
-        };
-      })
-    );
+      return {
+        ...classItem,
+        available_spots: availableSpots,
+      };
+    });
 
     return classesWithAvailability;
   } catch (error) {
@@ -358,14 +369,22 @@ export const getUserBookings = async (userId: string): Promise<ClassBooking[]> =
  * Get bookings for a class
  */
 export const getClassBookings = async (classId: string): Promise<ClassBooking[]> => {
+  console.log(`API CALL: getClassBookings(${classId}) at ${new Date().toISOString()}`);
+  
   try {
+    // Track the time it takes to fetch the data
+    console.time(`getClassBookings-${classId}`);
+    
     const { data, error } = await supabase
       .from('class_bookings')
       .select('*')
       .eq('class_id', classId)
       .order('booking_date', { ascending: false });
 
+    console.timeEnd(`getClassBookings-${classId}`);
+    
     if (error) throw error;
+    console.log(`Retrieved ${data?.length || 0} bookings for class ${classId}`);
     return data || [];
   } catch (error) {
     console.error('Error fetching class bookings:', error);

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { CalendarCheck, RefreshCw, Search, Calendar as CalendarIcon } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, startOfDay, parseISO, isEqual } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameMonth, startOfDay, isEqual } from "date-fns";
 import toast from "react-hot-toast";
 import { MainLayout } from "../components/Layout/MainLayout";
 // Types for our data
@@ -35,7 +35,7 @@ const UserAttendance: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserWithAttendance[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<UserWithAttendance[]>([]);
+  // filteredUsers will be memoized later
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedUser, setSelectedUser] = useState<UserWithAttendance | null>(null);
@@ -62,25 +62,12 @@ const UserAttendance: React.FC = () => {
     }
   }, [user, userRole, navigate]);
 
-  // Load users and attendance data
-  useEffect(() => {
-    if (userRole === 'admin') {
-      loadUsersData();
-    }
-  }, [userRole, month]);
-
   // Apply search filter
-  useEffect(() => {
-    if (users.length) {
-      filterUsers();
-    }
-  }, [searchQuery, users]);
+  // No longer need filterUsers() function or its useEffect, will use useMemo for filteredUsers
 
-  const loadUsersData = async () => {
+  const loadUsersData = useCallback(async () => {
     setLoading(true);
-    
     try {
-      // Get users
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
@@ -90,12 +77,10 @@ const UserAttendance: React.FC = () => {
       
       if (!usersData || usersData.length === 0) {
         setUsers([]);
-        setFilteredUsers([]);
         setLoading(false);
         return;
       }
       
-      // Get attendance data for the current month
       const firstDay = startOfMonth(month);
       const lastDay = endOfMonth(month);
       
@@ -107,48 +92,58 @@ const UserAttendance: React.FC = () => {
       
       if (attendanceError) throw attendanceError;
       
-      // Map attendance data to users
-      const usersWithAttendance: UserWithAttendance[] = usersData.map((userData: User) => {
-        const userAttendances = attendanceData?.filter(a => a.user_id === userData.id) || [];
-        
-        return {
-          ...userData,
-          attendances: userAttendances
-        };
-      });
+      const usersWithAttendance: UserWithAttendance[] = usersData.map((userData: User) => ({
+        ...userData,
+        attendances: attendanceData?.filter(a => a.user_id === userData.id) || []
+      }));
       
       setUsers(usersWithAttendance);
-      setFilteredUsers(usersWithAttendance);
       
     } catch (error) {
       console.error("Error loading users data:", error);
       toast.error("Failed to load users data");
+      setUsers([]); // Clear users on error
     } finally {
       setLoading(false);
     }
-  };
+  }, [month]); // month is a dependency here
 
-  const filterUsers = () => {
+  // Ensure user is admin - moved this up to group useEffects
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+    if (userRole !== 'admin') {
+      toast.error("Access denied: Admin privileges required");
+      navigate('/home');
+    }
+  }, [user, userRole, navigate]);
+
+  // Load users and attendance data - moved this up
+  useEffect(() => {
+    if (userRole === 'admin') {
+      loadUsersData();
+    }
+  }, [userRole, loadUsersData]); // loadUsersData is now a dependency
+
+  const filteredUsers = useMemo(() => {
     let filtered = [...users];
-    
-    // Apply search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(user => 
-        (user.name?.toLowerCase().includes(query)) || 
-        (user.email?.toLowerCase().includes(query))
+      filtered = filtered.filter(u => 
+        (u.name?.toLowerCase().includes(query)) || 
+        (u.email?.toLowerCase().includes(query))
       );
     }
-    
-    setFilteredUsers(filtered);
-  };
+    return filtered;
+  }, [users, searchQuery]);
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadUsersData();
+    await loadUsersData(); // loadUsersData is already memoized
     setRefreshing(false);
     toast.success("Attendance data refreshed");
-  };
+  }, [loadUsersData]); // loadUsersData is a dependency
 
   // Helper to get attendance for a specific day and user
   const getAttendanceForDay = (userId: string, date: Date) => {
@@ -278,90 +273,6 @@ const UserAttendance: React.FC = () => {
     );
   };
 
-  // Table showing all users
-  const UserList = () => {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>User Attendance Records</CardTitle>
-          <CardDescription>
-            View and manage attendance for all members
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                placeholder="Search users..."
-                className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-          </div>  
-          
-          {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse flex items-center p-4 border rounded-lg">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mr-4"></div>
-                  <div className="flex-1">
-                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-                  </div>
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map(user => {
-                  const attendanceCount = user.attendances.length;
-                  const attendancePercentage = Math.round((attendanceCount / days.length) * 100);
-                  
-                  return (
-                    <div 
-                      key={user.id}
-                      className={`
-                        flex items-center p-4 border rounded-lg cursor-pointer transition-colors
-                        ${selectedUser?.id === user.id ? 'border-primary bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
-                      `}
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                        <CalendarCheck className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{user.name || 'Unnamed User'}</div>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-medium">{attendanceCount} days</div>
-                        <div className="text-sm text-muted-foreground">{attendancePercentage}% this month</div>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No users found matching your search
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <MainLayout>
     <div className="container px-4 py-6 max-w-7xl mx-auto">
@@ -379,7 +290,17 @@ const UserAttendance: React.FC = () => {
       
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          <UserList />
+          <MemoizedUserList
+            filteredUsers={filteredUsers}
+            loading={loading}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedUser={selectedUser}
+            setSelectedUser={setSelectedUser}
+            handleRefresh={handleRefresh}
+            refreshing={refreshing}
+            days={days} // days is already memoized by being outside or from useMemo if month changes
+          />
         </div>
         
         <div className="lg:col-span-3">
@@ -413,4 +334,115 @@ const UserAttendance: React.FC = () => {
   );
 };
 
-export default UserAttendance; 
+// Define Props interface for UserList
+interface UserListProps {
+  filteredUsers: UserWithAttendance[];
+  loading: boolean;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  selectedUser: UserWithAttendance | null;
+  setSelectedUser: (user: UserWithAttendance | null) => void;
+  handleRefresh: () => void;
+  refreshing: boolean;
+  days: Date[];
+}
+
+// Define UserList component
+const UserListComponent: React.FC<UserListProps> = ({
+  filteredUsers,
+  loading,
+  searchQuery,
+  setSearchQuery,
+  selectedUser,
+  setSelectedUser,
+  handleRefresh,
+  refreshing,
+  days,
+}) => {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>User Attendance Records</CardTitle>
+        <CardDescription>
+          View and manage attendance for all members
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex justify-between items-center mb-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              placeholder="Search users..."
+              className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>  
+        
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse flex items-center p-4 border rounded-lg">
+                <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mr-4"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2"></div>
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                </div>
+                <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map(user => {
+                // Ensure days array is not empty to avoid division by zero
+                const attendanceCount = user.attendances.length;
+                const attendancePercentage = days.length > 0 ? Math.round((attendanceCount / days.length) * 100) : 0;
+                
+                return (
+                  <div 
+                    key={user.id}
+                    className={`
+                      flex items-center p-4 border rounded-lg cursor-pointer transition-colors
+                      ${selectedUser?.id === user.id ? 'border-primary bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+                    `}
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                      <CalendarCheck className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{user.name || 'Unnamed User'}</div>
+                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">{attendanceCount} days</div>
+                      <div className="text-sm text-muted-foreground">{attendancePercentage}% this month</div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No users found matching your search
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Wrap UserListComponent with React.memo
+const MemoizedUserList = React.memo(UserListComponent);
+
+export default UserAttendance;

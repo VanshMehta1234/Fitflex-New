@@ -25,10 +25,17 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
 
   const checkStatus = async () => {
     if (!user) {
+      // This case should ideally be handled by the useEffect not calling checkStatus,
+      // but as a safeguard or for direct calls to refreshAttendance when logged out:
+      setCheckedIn(false);
+      setLastCheckIn(null);
+      setStreak(0);
+      setLongestStreak(0);
       setLoading(false);
       return;
     }
     
+    setLoading(true); // Set loading true when we are about to fetch
     try {
       const todayCheckIn = await attendanceService.getTodayCheckIn(user.id);
       setCheckedIn(!!todayCheckIn);
@@ -51,11 +58,20 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    checkStatus();
-  }, [user]);
+    if (user?.id) {
+      checkStatus();
+    } else {
+      // User is not logged in or user object is cleared
+      setCheckedIn(false);
+      setLastCheckIn(null);
+      setStreak(0);
+      setLongestStreak(0);
+      setLoading(false); // Ensure loading is false if no user
+    }
+  }, [user?.id]); // Depend on user.id for stability
 
   const refreshAttendance = async () => {
-    setLoading(true);
+    // setLoading(true) is now handled by checkStatus if it proceeds
     await checkStatus();
   };
 

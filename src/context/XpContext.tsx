@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { XpTransaction, XpSource } from '../types/xp';
 import { addXpToUser, getUserTotalXp, getUserXpTransactions, LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
@@ -7,6 +7,18 @@ import { awardLevelMilestoneXp } from '../lib/xpRewardsService';
 
 // Constants for XP requirements per level
 // Now imported from xpService
+
+// Calculate current level based on XP - Moved outside for stability
+const calculateLevel = (xp: number): number => {
+  let level = 1;
+  for (let i = 20; i > 0; i--) {
+    if (xp >= LEVEL_XP_REQUIREMENTS[i]) {
+      level = i;
+      break;
+    }
+  }
+  return level;
+};
 
 interface XpContextType {
   userXp: number;
@@ -38,29 +50,8 @@ export function XpProvider({ children }: XpProviderProps) {
   const [xpTransactions, setXpTransactions] = useState<XpTransaction[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Fetch user's XP data from database on mount and when user changes
-  useEffect(() => {
-    if (user?.id) {
-      fetchXpData();
-    }
-  }, [user?.id]);
-  
-  // Calculate current level based on XP
-  const calculateLevel = (xp: number): number => {
-    let level = 1;
-    
-    for (let i = 20; i > 0; i--) {
-      if (xp >= LEVEL_XP_REQUIREMENTS[i]) {
-        level = i;
-        break;
-      }
-    }
-    
-    return level;
-  };
-  
   // Fetch XP data from database
-  const fetchXpData = async () => {
+  const fetchXpData = useCallback(async () => {
     if (!user?.id) return;
     
     setIsLoading(true);
@@ -84,10 +75,17 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, refreshUserProfile, setUserXp, setUserLevel, setXpTransactions, calculateLevel]);
   
+  // Fetch user's XP data from database on mount and when user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchXpData();
+    }
+  }, [user?.id, fetchXpData]);
+
   // Function to synchronize user level with XP
-  const syncUserLevel = async (): Promise<void> => {
+  const syncUserLevel = useCallback(async (): Promise<void> => {
     if (!user?.id) return;
     
     try {
@@ -118,10 +116,10 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, userLevel, calculateLevel, awardLevelMilestoneXp, getUserTotalXp, setUserXp, setUserLevel]);
   
   // Calculate progress information
-  const calculateProgress = () => {
+  const calculateProgress = useCallback(() => {
     const currentLevel = userLevel;
     const currentXp = userXp;
     const nextLevelXp = LEVEL_XP_REQUIREMENTS[currentLevel + 1] || userXp;
@@ -138,10 +136,10 @@ export function XpProvider({ children }: XpProviderProps) {
       xpToNextLevel,
       percent: currentLevel >= 20 ? 100 : percent
     };
-  };
+  }, [userLevel, userXp]);
   
   // Function to earn XP
-  const earnXp = async (amount: number, reason: string, source: XpSource): Promise<boolean> => {
+  const earnXp = useCallback(async (amount: number, reason: string, source: XpSource): Promise<boolean> => {
     if (!user?.id || amount <= 0) {
       return false;
     }
@@ -167,12 +165,12 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, addXpToUser, fetchXpData]);
 
   // Refresh XP data
-  const refreshXpData = async (): Promise<void> => {
+  const refreshXpData = useCallback(async (): Promise<void> => {
     await fetchXpData();
-  };
+  }, [fetchXpData]);
   
   const value = {
     userXp,

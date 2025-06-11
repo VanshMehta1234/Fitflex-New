@@ -1,9 +1,31 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 import { ExtendedUser, AppUser } from '../types/user';
 import { ProfileUpdateData, updateUserProfile, getUserProfile, profileCache, UserProfile } from '../lib/profileService';
 import toast from 'react-hot-toast';
+
+// Moved createUserProfile outside the component for stability
+const createUserProfile = async (userId: string, role: UserRole = 'user') => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .insert([{ 
+        id: userId, 
+        role,
+        streak: 0,
+        membershipType: 'Basic'
+      }]);
+
+    if (error) {
+      console.error('Error creating user profile:', error);
+      // Optionally, re-throw or handle more gracefully
+    }
+  } catch (error) {
+    console.error('Error in createUserProfile:', error);
+    // Optionally, re-throw or handle more gracefully
+  }
+};
 
 export type UserRole = 'user' | 'admin';
 
@@ -41,28 +63,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<UserRole>('user');
   const [loading, setLoading] = useState(true);
 
-  // Create a profile for a new user
-  const createUserProfile = async (userId: string, role: UserRole = 'user') => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .insert([{ 
-          id: userId, 
-          role,
-          streak: 0,
-          membershipType: 'Basic'
-        }]);
 
-      if (error) {
-        console.error('Error creating user profile:', error);
+  const refreshUserProfile = useCallback(async (): Promise<void> => {
+    if (!user?.id) return;
+
+    try {
+      // Clear the cache to ensure we get fresh data
+      profileCache.invalidate(user.id);
+      
+      // Get updated profile
+      const userProfile = await getUserProfile(user.id); // Renamed to avoid conflict with Profile type
+      
+      if (userProfile) {
+        setUser(currentUser => {
+          if (!currentUser) return null; // Should not happen if user.id exists
+
+          const profileImage = userProfile.profileImage || userProfile.profile_image;
+          
+          const newExtendedUser: ExtendedUser = {
+            ...currentUser, // Preserve existing fields from currentUser (like email, auth related fields)
+            id: currentUser.id, // Ensure id from currentUser is preserved
+            streak: userProfile.streak,
+            membershipType: userProfile.membershipType,
+            name: userProfile.name,
+            profileImage: profileImage,
+            // Note: 'role' is handled by setUserRole separately below, 
+            // but if it were part of AppUser directly, it would be here.
+          };
+
+          // Shallow compare relevant fields
+          if (
+            currentUser.name === newExtendedUser.name &&
+            currentUser.streak === newExtendedUser.streak &&
+            currentUser.membershipType === newExtendedUser.membershipType &&
+            currentUser.profileImage === newExtendedUser.profileImage
+            // Add other simple fields if necessary. Avoid deep comparing objects here.
+          ) {
+            return currentUser; // Return previous state if no meaningful change
+          }
+          return newExtendedUser; // Return new state
+        });
+        setUserRole((userProfile.role as UserRole) || 'user'); // Role can be updated separately
       }
     } catch (error) {
-      console.error('Error in createUserProfile:', error);
+      console.error('Error refreshing user profile:', error);
+      toast.error('Failed to refresh profile data');
     }
-  };
+  }, [user]); // Depends on the 'user' state to spread its existing values
 
   // Update the user's profile data
-  const updateProfile = async (profileData: ProfileUpdateData) => {
+  const updateProfile = useCallback(async (profileData: ProfileUpdateData) => {
     if (!user) {
       toast.error('You must be logged in to update your profile');
       throw new Error('User not authenticated');
@@ -86,41 +136,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || 'Failed to update profile');
       throw error;
     }
-  };
+  }, [user, refreshUserProfile]);
 
   // Refresh the user's profile data
-  const refreshUserProfile = async (): Promise<void> => {
-    if (!user?.id) return;
-
-    try {
-      // Clear the cache to ensure we get fresh data
-      profileCache.invalidate(user.id);
-      
-      // Get updated profile
-      const profile = await getUserProfile(user.id);
-      
-      if (profile) {
-        // Get profile image
-        const profileImage = profile.profileImage || profile.profile_image;
-        
-        // Create an extended user with profile data
-        const extendedUser: ExtendedUser = {
-          ...user,
-          streak: profile.streak,
-          membershipType: profile.membershipType,
-          name: profile.name,
-          profileImage: profileImage, 
-        };
-        
-        setUser(extendedUser);
-        setUserRole((profile.role as UserRole) || 'user');
-      }
-    } catch (error) {
-      console.error('Error refreshing user profile:', error);
-      toast.error('Failed to refresh profile data');
-    }
-  };
-
   const handleAuthChange = async (session: Session | null) => {
     setSession(session);
     
@@ -129,30 +147,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Clear cache to ensure fresh data
         profileCache.invalidate(session.user.id);
         
-        const profile = await getUserProfile(session.user.id);
+        const userProfile = await getUserProfile(session.user.id); // Renamed
         
-        // Get profile image
-        const profileImage = profile?.profileImage || profile?.profile_image;
-        
-        // Create an extended user with profile data
-        const extendedUser: ExtendedUser = {
-          ...session.user,
-          streak: profile?.streak || 0,
-          membershipType: profile?.membershipType || 'Basic',
-          name: profile?.name || '',
-          profileImage: profileImage || '',
-        };
-        
-        setUser(extendedUser);
-        setUserRole((profile?.role as UserRole) || 'user');
+        setUser(currentUser => {
+          const baseUser = session.user as SupabaseUser; // User from Supabase session
+
+          const profileImage = userProfile?.profileImage || userProfile?.profile_image;
+
+          const newExtendedUser: ExtendedUser = {
+            // Crucially, spread Supabase user from session first for auth properties
+            ...baseUser, 
+            // Then override/add profile data
+            id: baseUser.id, // ensure supabase user id is primary
+            email: baseUser.email, // ensure supabase email is primary
+            streak: userProfile?.streak || 0,
+            membershipType: userProfile?.membershipType || 'Basic',
+            name: userProfile?.name || '',
+            profileImage: profileImage || '',
+            // Ensure all fields from AppUser are considered
+            // For example, if AppUser can have fields not in SupabaseUser or profile
+          };
+
+          if (currentUser) {
+            // Shallow compare relevant fields
+            if (
+              currentUser.id === newExtendedUser.id &&
+              currentUser.email === newExtendedUser.email &&
+              currentUser.name === newExtendedUser.name &&
+              currentUser.streak === newExtendedUser.streak &&
+              currentUser.membershipType === newExtendedUser.membershipType &&
+              currentUser.profileImage === newExtendedUser.profileImage
+            ) {
+              return currentUser; // No change
+            }
+          }
+          return newExtendedUser; // New user or changed user
+        });
+        setUserRole((userProfile?.role as UserRole) || 'user');
       } catch (error) {
-        console.error('Error loading user profile:', error);
-        // Set basic user without profile data
-        setUser(session.user);
+        console.error('Error loading user profile in handleAuthChange:', error);
+        // Set basic user from session if profile fetch fails
+        setUser(session.user); 
         setUserRole('user');
       }
     } else {
-      setUser(null);
+      // No session, clear user
+      setUser(prevUser => prevUser ? null : prevUser); // Only update if user was not already null
       setUserRole('user');
     }
     
@@ -177,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ 
       email, 
       password
@@ -189,9 +229,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     return { error };
-  };
+  }, []); // createUserProfile is now a stable static helper
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -209,9 +249,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || 'An error occurred during sign in');
       return { error };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       // Set user state to null first to improve UX during sign out
       setUser(null);
@@ -244,9 +284,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole('user');
       setSession(null);
     }
-  };
+  }, []);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
       // Define the base URL from the current window location
       const baseUrl = window.location.origin;
@@ -274,9 +314,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error(error.message || 'An unexpected error occurred');
       return { error };
     }
-  };
+  }, []);
 
-  const deleteAccount = async () => {
+  const deleteAccount = useCallback(async () => {
     if (!user) {
       toast.error('You must be logged in to delete your account');
       return { error: new Error('User not authenticated') };
@@ -314,9 +354,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error deleting account:', error);
       return { error };
     }
-  };
+  }, [user?.id]);
 
-  const value = {
+  const value = useMemo(() => ({
     session,
     user,
     loading,
@@ -328,7 +368,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     refreshUserProfile,
     deleteAccount
-  };
+  }), [
+    session, 
+    user, 
+    loading, 
+    userRole, 
+    signUp, 
+    signIn, 
+    signOut, 
+    resetPassword, 
+    updateProfile, 
+    refreshUserProfile, 
+    deleteAccount
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

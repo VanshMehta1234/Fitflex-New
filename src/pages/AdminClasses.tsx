@@ -44,9 +44,6 @@ export default function AdminClasses() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   
-  // State for booking counts
-  const [bookingCounts, setBookingCounts] = useState<{[key: string]: number}>({});
-  
   // State for selected date
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -66,29 +63,6 @@ export default function AdminClasses() {
     recurring_type: "none" as "none" | "specific-day" | "all-days",
     month_count: 1
   });
-  
-  // Fetch booking counts when classes change
-  useEffect(() => {
-    const fetchBookingCounts = async () => {
-      const counts: {[key: string]: number} = {};
-      
-      for (const cls of classes) {
-        try {
-          const bookings = await getClassBookings(cls.id);
-          counts[cls.id] = bookings.filter(b => b.attendance_status !== 'cancelled').length;
-        } catch (error) {
-          console.error(`Error fetching bookings for class ${cls.id}:`, error);
-          counts[cls.id] = 0;
-        }
-      }
-      
-      setBookingCounts(counts);
-    };
-    
-    if (classes.length > 0) {
-      fetchBookingCounts();
-    }
-  }, [classes]);
   
   // Update formData when selectedDate changes
   useEffect(() => {
@@ -522,13 +496,18 @@ export default function AdminClasses() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={
-                          bookingCounts[cls.id] === cls.capacity ? "destructive" : 
-                          bookingCounts[cls.id] > cls.capacity * 0.7 ? "secondary" : 
-                          "outline"
-                        }>
-                          {bookingCounts[cls.id] || 0} / {cls.capacity}
-                        </Badge>
+                        {(() => {
+                          const bookedSpots = cls.capacity - (cls.available_spots ?? 0);
+                          return (
+                            <Badge variant={
+                              bookedSpots === cls.capacity ? "destructive" : 
+                              bookedSpots > cls.capacity * 0.7 ? "secondary" : 
+                              "outline"
+                            }>
+                              {bookedSpots} / {cls.capacity}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
