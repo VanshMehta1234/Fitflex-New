@@ -44,11 +44,6 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
   const menuItems = [
     ...(userRole === 'admin' ? [
       {
-        icon: BarChart,
-        label: 'Admin',
-        path: '/admin',
-      },
-      {
         icon: CalendarCheck,
         label: 'Weekly Feedback Analysis',
         path: '/admin/weekly-feedback',

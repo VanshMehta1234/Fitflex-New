@@ -3,7 +3,7 @@
 /* Fix for all popovers to ensure they appear above dialogs */
 [data-radix-popper-content-wrapper] {
   z-index: 99999 !important;
-  position: relative !important;
+  /* position: relative !important; */
 }
 
 /* Make sure portal content gets the same high z-index */

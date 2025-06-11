@@ -56,7 +56,6 @@ const AppRoutes = () => (
         <Route path="/settings" element={<Settings />} />
         
         <Route element={<RoleBasedRoute allowedRoles={['admin']} />}>
-          <Route path="/admin/*" element={<div>Admin Area</div>} />
           <Route path="/admin/user-attendance" element={<UserAttendance />} />
           <Route path="/admin/classes" element={<AdminClasses />} />
           <Route path="/admin/weekly-feedback" element={<WeeklyFeedbackAnalysis />} />
