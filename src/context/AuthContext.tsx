@@ -213,17 +213,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Set user state to null first to improve UX during sign out
+      setUser(null);
+      setUserRole('user');
+      
+      // Attempt to sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        // Handle session_not_found error gracefully
+        if (error.message.includes('session_not_found') || error.code === 'session_not_found') {
+          console.log('Session already expired, continuing sign out process');
+          toast.success('Signed out successfully');
+          return;
+        }
+        
+        // Show error for other issues
+        console.error('Error signing out:', error);
         toast.error(error.message);
-        throw error;
+        return;
       }
       
       toast.success('Signed out successfully');
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred during sign out');
       console.error('Error signing out:', error);
+      toast.error(error.message || 'An error occurred during sign out');
+      
+      // Ensure we still clear local state even if server request fails
+      setUser(null);
+      setUserRole('user');
+      setSession(null);
     }
   };
 

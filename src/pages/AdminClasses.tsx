@@ -1,7 +1,10 @@
+// Import the admin styles
+import "../styles/Admin.css";
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useClasses } from "../context/ClassContext";
-import { Class, getClassBookings, ClassBooking } from "../lib/classService";
+import { Class, getClassBookings, ClassBooking, createClasses } from "../lib/classService";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent} from "../components/ui/card";
@@ -19,10 +22,12 @@ import {
   Search,
   Users
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isBefore, startOfDay, addYears, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, getDay } from "date-fns";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../components/Layout/MainLayout";
+import { DatePicker } from "../components/ui/date-picker";
+import { TimePicker } from "../components/ui/time-picker";
 
 export default function AdminClasses() {
   const { user, userRole } = useAuth();
@@ -42,6 +47,9 @@ export default function AdminClasses() {
   // State for booking counts
   const [bookingCounts, setBookingCounts] = useState<{[key: string]: number}>({});
   
+  // State for selected date
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -53,7 +61,10 @@ export default function AdminClasses() {
     location: "",
     level: "all levels" as "beginner" | "intermediate" | "advanced" | "all levels",
     type: "yoga" as "yoga" | "cardio" | "strength" | "hiit" | "dance" | "pilates" | "cycling" | "other",
-    image_url: ""
+    image_url: "",
+    day_of_week: null as number | null,
+    recurring_type: "none" as "none" | "specific-day" | "all-days",
+    month_count: 1
   });
   
   // Fetch booking counts when classes change
@@ -78,6 +89,29 @@ export default function AdminClasses() {
       fetchBookingCounts();
     }
   }, [classes]);
+  
+  // Update formData when selectedDate changes
+  useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        date: format(selectedDate, 'yyyy-MM-dd')
+      }));
+    }
+  }, [selectedDate]);
+  
+  // Reset data and refresh on mount
+  useEffect(() => {
+    resetFormData();
+    setSelectedDate(new Date());
+    
+    // Add this to force rerender of dropdowns
+    const refreshTimer = setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+    
+    return () => clearTimeout(refreshTimer);
+  }, []);
   
   // Check if user is admin
   if (!user || userRole !== "admin") {
@@ -126,14 +160,22 @@ export default function AdminClasses() {
       location: "",
       level: "all levels",
       type: "yoga",
-      image_url: ""
+      image_url: "",
+      day_of_week: null,
+      recurring_type: "none",
+      month_count: 1
     });
     setSelectedClass(null);
   };
   
-  // Open edit dialog
+  // Handle edit class
   const handleEditClass = (cls: Class) => {
     setSelectedClass(cls);
+    
+    // Parse the date string to Date object for the date picker
+    const classDate = cls.date ? parseISO(cls.date) : new Date();
+    setSelectedDate(classDate);
+    
     setFormData({
       name: cls.name,
       description: cls.description || "",
@@ -145,7 +187,10 @@ export default function AdminClasses() {
       location: cls.location,
       level: cls.level,
       type: cls.type,
-      image_url: cls.image_url || ""
+      image_url: cls.image_url || "",
+      day_of_week: cls.day_of_week || null,
+      recurring_type: cls.recurring_type || "none",
+      month_count: cls.month_count || 1
     });
     setIsEditDialogOpen(true);
   };
@@ -156,20 +201,109 @@ export default function AdminClasses() {
     setIsDeleteDialogOpen(true);
   };
   
+  // Generate recurring class dates
+  const generateRecurringDates = (startDate: string, recurringType: 'none' | 'specific-day' | 'all-days', dayOfWeek: number | null, monthCount: number) => {
+    try {
+      const start = parseISO(startDate);
+      const end = endOfMonth(addMonths(start, monthCount - 1));
+      
+      // For debugging
+      console.log("Generating recurring dates with:", { 
+        startDate, 
+        recurringType, 
+        dayOfWeek, 
+        monthCount,
+        startObj: start,
+        endObj: end
+      });
+      
+      if (recurringType === 'all-days') {
+        // Get all days in the interval
+        const allDates = eachDayOfInterval({ start, end }).map(date => format(date, 'yyyy-MM-dd'));
+        console.log(`Generated ${allDates.length} dates for all-days`);
+        return allDates;
+      } else if (recurringType === 'specific-day' && dayOfWeek !== null) {
+        // Get all days matching the specified day of week
+        const daysOfWeek = eachDayOfInterval({ start, end })
+          .filter(date => getDay(date) === dayOfWeek)
+          .map(date => format(date, 'yyyy-MM-dd'));
+        
+        console.log(`Generated ${daysOfWeek.length} dates for specific-day (${dayOfWeek})`);
+        return daysOfWeek;
+      }
+      
+      // Default case - just return the original date
+      console.log("Using default single date");
+      return [startDate];
+    } catch (error) {
+      console.error("Error generating recurring dates:", error);
+      // Return original date in case of error
+      return [startDate];
+    }
+  };
+  
   // Submit create class form
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      await createClass({
+      // Ensure we have the date from the selectedDate
+      if (!selectedDate && formData.recurring_type !== "none") {
+        toast.error("Please select a date first");
+        return;
+      }
+
+      // Make sure form data date is updated from selectedDate
+      const updatedFormData = {
         ...formData,
-        created_by: user?.id || ""
-      });
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : formData.date
+      };
       
-      toast.success("Class created successfully");
+      // If recurring type is not none, create multiple classes with createClasses
+      if (updatedFormData.recurring_type !== "none") {
+        // For specific-day type, if day_of_week is not set, use the selected date's day
+        if (updatedFormData.recurring_type === "specific-day" && updatedFormData.day_of_week === null && selectedDate) {
+          updatedFormData.day_of_week = getDay(selectedDate);
+        }
+        
+        // Generate dates based on the recurring type
+        const dates = generateRecurringDates(
+          updatedFormData.date,
+          updatedFormData.recurring_type,
+          updatedFormData.day_of_week,
+          updatedFormData.month_count
+        );
+        
+        if (dates.length === 0) {
+          toast.error("No valid dates were generated for the recurring class");
+          return;
+        }
+        
+        // Create a class object for each date
+        const classesData = dates.map(date => ({
+          ...updatedFormData,
+          date,
+          created_by: user?.id || ""
+        }));
+        
+        console.log("Creating recurring classes with data:", classesData);
+        
+        // Use createClasses to create all classes at once
+        await createClasses(classesData);
+        toast.success(`${dates.length} recurring classes created successfully`);
+      } else {
+        // Create a single class
+        await createClass({
+          ...updatedFormData,
+          created_by: user?.id || ""
+        });
+        toast.success("Class created successfully");
+      }
+      
       setIsCreateDialogOpen(false);
       resetFormData();
     } catch (error: any) {
+      console.error("Error creating class:", error);
       toast.error(error.message || "Failed to create class");
     }
   };
@@ -181,12 +315,104 @@ export default function AdminClasses() {
     if (!selectedClass) return;
     
     try {
-      await updateClass(selectedClass.id, formData);
+      // Ensure we have the date from the selectedDate
+      if (!selectedDate && formData.recurring_type !== "none") {
+        toast.error("Please select a date first");
+        return;
+      }
+
+      // Make sure form data date is updated from selectedDate
+      const updatedFormData = {
+        ...formData,
+        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : formData.date
+      };
       
-      toast.success("Class updated successfully");
+      // Check if we're changing from single to recurring or vice versa
+      if (selectedClass.recurring_type !== updatedFormData.recurring_type) {
+        // If changing to recurring
+        if (updatedFormData.recurring_type !== "none") {
+          // For specific-day type, if day_of_week is not set, use the selected date's day
+          if (updatedFormData.recurring_type === "specific-day" && updatedFormData.day_of_week === null && selectedDate) {
+            updatedFormData.day_of_week = getDay(selectedDate);
+          }
+          
+          // Delete the original class and create new recurring ones
+          await deleteClass(selectedClass.id);
+          
+          // Generate dates based on the recurring type
+          const dates = generateRecurringDates(
+            updatedFormData.date,
+            updatedFormData.recurring_type,
+            updatedFormData.day_of_week,
+            updatedFormData.month_count
+          );
+          
+          if (dates.length === 0) {
+            toast.error("No valid dates were generated for the recurring class");
+            return;
+          }
+          
+          // Create a class object for each date
+          const classesData = dates.map(date => ({
+            ...updatedFormData,
+            date,
+            created_by: user?.id || ""
+          }));
+          
+          console.log("Creating recurring classes after edit with data:", classesData);
+          
+          await createClasses(classesData);
+          toast.success(`Updated to recurring class with ${dates.length} classes`);
+        } else {
+          // Changing from recurring to single
+          await updateClass(selectedClass.id, updatedFormData);
+          toast.success("Class updated to single class successfully");
+        }
+      } else if (updatedFormData.recurring_type !== "none" && 
+                (selectedClass.month_count !== updatedFormData.month_count || 
+                 selectedClass.day_of_week !== updatedFormData.day_of_week)) {
+        // For specific-day type, if day_of_week is not set, use the selected date's day
+        if (updatedFormData.recurring_type === "specific-day" && updatedFormData.day_of_week === null && selectedDate) {
+          updatedFormData.day_of_week = getDay(selectedDate);
+        }
+        
+        // Changing recurring settings, recreate the series
+        await deleteClass(selectedClass.id);
+        
+        // Generate dates based on the recurring type
+        const dates = generateRecurringDates(
+          updatedFormData.date,
+          updatedFormData.recurring_type,
+          updatedFormData.day_of_week,
+          updatedFormData.month_count
+        );
+        
+        if (dates.length === 0) {
+          toast.error("No valid dates were generated for the recurring class");
+          return;
+        }
+        
+        // Create a class object for each date
+        const classesData = dates.map(date => ({
+          ...updatedFormData,
+          date,
+          created_by: user?.id || ""
+        }));
+        
+        console.log("Updating recurring settings with data:", classesData);
+        
+        await createClasses(classesData);
+        toast.success(`Updated recurring settings, created ${dates.length} classes`);
+      } else {
+        // No change in recurring type or settings
+        await updateClass(selectedClass.id, updatedFormData);
+        toast.success("Class updated successfully");
+      }
+      
       setIsEditDialogOpen(false);
       resetFormData();
     } catch (error: any) {
+      console.error("Error updating class:", error);
       toast.error(error.message || "Failed to update class");
     }
   };
@@ -403,23 +629,21 @@ export default function AdminClasses() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    name="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
+                  <DatePicker
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                    placeholder="Select date"
+                    fromDate={new Date()}
+                    toDate={addYears(new Date(), 1)}
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="time">Time</Label>
-                  <Input
-                    id="time"
-                    name="time"
-                    type="time"
-                    value={formData.time}
-                    onChange={handleInputChange}
+                  <TimePicker
+                    time={formData.time}
+                    setTime={(time) => setFormData({ ...formData, time })}
+                    placeholder="Select time"
                   />
                 </div>
               </div>
@@ -458,9 +682,9 @@ export default function AdminClasses() {
                 <div className="space-y-2">
                   <Label htmlFor="type">Class Type</Label>
                   <Select
-                    name="type"
                     value={formData.type}
-                    onValueChange={(value: "yoga" | "cardio" | "strength" | "hiit" | "dance" | "pilates" | "cycling" | "other") => setFormData(prev => ({ ...prev, type: value }))}
+                    onValueChange={(value: "yoga" | "cardio" | "strength" | "hiit" | "dance" | "pilates" | "cycling" | "other") => 
+                      setFormData(prev => ({ ...prev, type: value }))}
                   >
                     <SelectTrigger id="type">
                       <SelectValue placeholder="Select type" />
@@ -481,9 +705,9 @@ export default function AdminClasses() {
                 <div className="space-y-2">
                   <Label htmlFor="level">Experience Level</Label>
                   <Select
-                    name="level"
                     value={formData.level}
-                    onValueChange={(value: "beginner" | "intermediate" | "advanced" | "all levels") => setFormData(prev => ({ ...prev, level: value }))}
+                    onValueChange={(value: "beginner" | "intermediate" | "advanced" | "all levels") => 
+                      setFormData(prev => ({ ...prev, level: value }))}
                   >
                     <SelectTrigger id="level">
                       <SelectValue placeholder="Select level" />
@@ -497,6 +721,73 @@ export default function AdminClasses() {
                   </Select>
                 </div>
               </div>
+              
+              {/* Recurring Options */}
+              <div className="space-y-2">
+                <Label htmlFor="recurring_type">Schedule Type</Label>
+                <Select
+                  value={formData.recurring_type}
+                  onValueChange={(value: "none" | "specific-day" | "all-days") => 
+                    setFormData(prev => ({ ...prev, recurring_type: value }))}
+                >
+                  <SelectTrigger id="recurring_type">
+                    <SelectValue placeholder="Select recurring type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Single Class</SelectItem>
+                    <SelectItem value="specific-day">Specific Day Each Week</SelectItem>
+                    <SelectItem value="all-days">All Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {formData.recurring_type !== "none" && (
+                <div className="grid grid-cols-2 gap-4">
+                  {formData.recurring_type === "specific-day" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="day_of_week">Day of Week</Label>
+                      <Select
+                        value={formData.day_of_week?.toString() || ""}
+                        onValueChange={(value: string) => 
+                          setFormData(prev => ({ ...prev, day_of_week: parseInt(value) }))}
+                      >
+                        <SelectTrigger id="day_of_week">
+                          <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Sunday</SelectItem>
+                          <SelectItem value="1">Monday</SelectItem>
+                          <SelectItem value="2">Tuesday</SelectItem>
+                          <SelectItem value="3">Wednesday</SelectItem>
+                          <SelectItem value="4">Thursday</SelectItem>
+                          <SelectItem value="5">Friday</SelectItem>
+                          <SelectItem value="6">Saturday</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="month_count">Duration (months)</Label>
+                    <Select
+                      value={formData.month_count.toString()}
+                      onValueChange={(value: string) => 
+                        setFormData(prev => ({ ...prev, month_count: parseInt(value) }))}
+                    >
+                      <SelectTrigger id="month_count">
+                        <SelectValue placeholder="Select duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Month</SelectItem>
+                        <SelectItem value="2">2 Months</SelectItem>
+                        <SelectItem value="3">3 Months</SelectItem>
+                        <SelectItem value="6">6 Months</SelectItem>
+                        <SelectItem value="12">1 Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
               
               {/* Image URL */}
               <div className="space-y-2">
@@ -593,23 +884,21 @@ export default function AdminClasses() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-date">Date</Label>
-                  <Input
-                    id="edit-date"
-                    name="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={handleInputChange}
+                  <DatePicker
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                    placeholder="Select date"
+                    fromDate={new Date()}
+                    toDate={addYears(new Date(), 1)}
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="edit-time">Time</Label>
-                  <Input
-                    id="edit-time"
-                    name="time"
-                    type="time"
-                    value={formData.time}
-                    onChange={handleInputChange}
+                  <TimePicker
+                    time={formData.time}
+                    setTime={(time) => setFormData({ ...formData, time })}
+                    placeholder="Select time"
                   />
                 </div>
               </div>
@@ -648,9 +937,9 @@ export default function AdminClasses() {
                 <div className="space-y-2">
                   <Label htmlFor="edit-type">Class Type</Label>
                   <Select
-                    name="type"
                     value={formData.type}
-                    onValueChange={(value: "yoga" | "cardio" | "strength" | "hiit" | "dance" | "pilates" | "cycling" | "other") => setFormData(prev => ({ ...prev, type: value }))}
+                    onValueChange={(value: "yoga" | "cardio" | "strength" | "hiit" | "dance" | "pilates" | "cycling" | "other") => 
+                      setFormData(prev => ({ ...prev, type: value }))}
                   >
                     <SelectTrigger id="edit-type">
                       <SelectValue placeholder="Select type" />
@@ -671,9 +960,9 @@ export default function AdminClasses() {
                 <div className="space-y-2">
                   <Label htmlFor="edit-level">Experience Level</Label>
                   <Select
-                    name="level"
                     value={formData.level}
-                    onValueChange={(value: "beginner" | "intermediate" | "advanced" | "all levels") => setFormData(prev => ({ ...prev, level: value }))}
+                    onValueChange={(value: "beginner" | "intermediate" | "advanced" | "all levels") => 
+                      setFormData(prev => ({ ...prev, level: value }))}
                   >
                     <SelectTrigger id="edit-level">
                       <SelectValue placeholder="Select level" />
@@ -687,6 +976,73 @@ export default function AdminClasses() {
                   </Select>
                 </div>
               </div>
+              
+              {/* Recurring Options */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-recurring_type">Schedule Type</Label>
+                <Select
+                  value={formData.recurring_type}
+                  onValueChange={(value: "none" | "specific-day" | "all-days") => 
+                    setFormData(prev => ({ ...prev, recurring_type: value }))}
+                >
+                  <SelectTrigger id="edit-recurring_type">
+                    <SelectValue placeholder="Select recurring type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Single Class</SelectItem>
+                    <SelectItem value="specific-day">Specific Day Each Week</SelectItem>
+                    <SelectItem value="all-days">All Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {formData.recurring_type !== "none" && (
+                <div className="grid grid-cols-2 gap-4">
+                  {formData.recurring_type === "specific-day" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-day_of_week">Day of Week</Label>
+                      <Select
+                        value={formData.day_of_week?.toString() || ""}
+                        onValueChange={(value: string) => 
+                          setFormData(prev => ({ ...prev, day_of_week: parseInt(value) }))}
+                      >
+                        <SelectTrigger id="edit-day_of_week">
+                          <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Sunday</SelectItem>
+                          <SelectItem value="1">Monday</SelectItem>
+                          <SelectItem value="2">Tuesday</SelectItem>
+                          <SelectItem value="3">Wednesday</SelectItem>
+                          <SelectItem value="4">Thursday</SelectItem>
+                          <SelectItem value="5">Friday</SelectItem>
+                          <SelectItem value="6">Saturday</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-month_count">Duration (months)</Label>
+                    <Select
+                      value={formData.month_count.toString()}
+                      onValueChange={(value: string) => 
+                        setFormData(prev => ({ ...prev, month_count: parseInt(value) }))}
+                    >
+                      <SelectTrigger id="edit-month_count">
+                        <SelectValue placeholder="Select duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Month</SelectItem>
+                        <SelectItem value="2">2 Months</SelectItem>
+                        <SelectItem value="3">3 Months</SelectItem>
+                        <SelectItem value="6">6 Months</SelectItem>
+                        <SelectItem value="12">1 Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
               
               {/* Image URL */}
               <div className="space-y-2">

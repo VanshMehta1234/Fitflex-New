@@ -21,6 +21,9 @@ export type Class = {
   updated_at: string;
   created_by: string;
   available_spots?: number; // Calculated field, not in database
+  day_of_week?: number | null;
+  recurring_type?: 'none' | 'specific-day' | 'all-days';
+  month_count?: number;
 };
 
 // Booking type for TypeScript
@@ -469,6 +472,52 @@ export const markNoShow = async (bookingId: string): Promise<ClassBooking> => {
   } catch (error) {
     console.error('Error marking no-show:', error);
     toast.error(error instanceof Error ? error.message : 'Failed to mark no-show');
+    throw error;
+  }
+};
+
+/**
+ * Create multiple classes in a batch
+ */
+export const createClasses = async (classesData: Omit<Class, 'id' | 'created_at' | 'updated_at'>[]): Promise<Class[]> => {
+  try {
+    // Validate all class dates
+    classesData.forEach(classData => {
+      validateClassDate(classData.date);
+    });
+
+    // Transform the data to match database column names and ensure recurring info is set
+    const transformedData = classesData.map(classData => ({
+      name: classData.name,
+      description: classData.description,
+      instructor: classData.instructor,
+      date: classData.date,
+      time: classData.time,
+      duration: classData.duration,
+      capacity: classData.capacity,
+      location: classData.location,
+      level: classData.level,
+      type: classData.type,
+      image_url: classData.image_url,
+      created_by: classData.created_by,
+      day_of_week: classData.day_of_week || null,
+      recurring_type: classData.recurring_type || 'none',
+      month_count: classData.month_count || 1
+    }));
+
+    const { data, error } = await supabase
+      .from('classes')
+      .insert(transformedData)
+      .select();
+
+    if (error) throw error;
+    if (!data) throw new Error('Failed to create classes');
+    
+    toast.success(`Created ${data.length} classes successfully`);
+    return data;
+  } catch (error) {
+    console.error('Error creating classes:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to create classes');
     throw error;
   }
 }; 

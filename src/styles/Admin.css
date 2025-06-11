@@ -1,1 +1,78 @@
-/* Admin.css is now empty as all styles are managed through Tailwind CSS utility classes */ 
+/* Admin.css */
+
+/* Fix for all popovers to ensure they appear above dialogs */
+[data-radix-popper-content-wrapper] {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+/* Make sure portal content gets the same high z-index */
+[data-radix-portal] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 99999 !important;
+}
+
+/* Important overrides for specific date picker elements */
+.rdp-popup, 
+.rdp-button,
+.rdp-day {
+  z-index: 99999 !important;
+  position: relative !important;
+}
+
+/* Calendar styles */
+.rdp {
+  --rdp-cell-size: 40px; /* Size of day cells */
+  --rdp-accent-color: #3b82f6; /* Primary accent color */
+  --rdp-background-color: #e0e7ff; /* Background color */
+  --rdp-accent-color-dark: #2563eb; /* Darker accent for contrast */
+  --rdp-background-color-dark: #1e293b; /* Dark mode background */
+  --rdp-outline: 2px solid var(--rdp-accent-color); /* Focus outline */
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color); /* Selected date outline */
+  margin: 0;
+}
+
+.rdp-months {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.rdp-month {
+  margin: 0;
+}
+
+.rdp-table {
+  width: 100%;
+}
+
+.rdp-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.5em;
+  text-align: left;
+}
+
+.rdp-nav {
+  white-space: nowrap;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: #f3f4f6;
+}
+
+.rdp-day_selected {
+  background-color: var(--rdp-accent-color);
+  color: white;
+}
+
+/* Dropdown styles */
+[data-state="open"] > [data-radix-select-viewport] {
+  background-color: white;
+  border-radius: 0.375rem;
+  box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35), 0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+} 
