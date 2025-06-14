@@ -14,7 +14,7 @@ export interface UserProfile {
   email?: string;
   role?: string;
   streak?: number;
-  membershipType?: string;
+  membershipType: string;
   profile_image?: string;
   profileImage?: string;
   bio?: string;

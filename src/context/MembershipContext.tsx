@@ -4,6 +4,8 @@ import { membershipService } from '../lib/membershipService';
 import { stripeService } from '../lib/stripeService';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Button } from '../components/ui/button';
 
 interface MembershipContextType {
   membership: UserMembership | null;
@@ -28,6 +30,8 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
+  const [pendingUpgrade, setPendingUpgrade] = useState<{tier: MembershipTier, billingCycle: 'monthly' | 'yearly'} | null>(null);
 
   // Fetch membership data when user changes
   useEffect(() => {
@@ -76,14 +80,31 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!user) {
       toast.error('You must be logged in to upgrade your membership');
       return;
-    }   
-    console.log(tier)
-    console.log(billingCycle)
-
-    //so we are getting tier and billingCycle 
-    //based on that we need to get the priceId from env
+    }
     
+    console.log(tier);
+    console.log(billingCycle);
+
+    // Check if user already has a membership
+    if (membership && membership.type !== tier) {
+      // Show confirmation dialog
+      setPendingUpgrade({ tier, billingCycle });
+      setShowConfirmDialog(true);
+      return;
+    }
+    
+    // If no existing membership or same tier, proceed without confirmation
+    await processMembershipUpgrade(tier, billingCycle);
+  };
+  
+  // Process the actual membership upgrade after confirmation
+  const processMembershipUpgrade = async (tier: MembershipTier, billingCycle: 'monthly' | 'yearly') => {
     try {
+      if (!user) {
+        toast.error('You must be logged in to upgrade your membership');
+        return;
+      }
+      
       if (membership && membership.stripeSubscriptionId) {
         // Update existing subscription
         await stripeService.updateSubscription(
@@ -104,6 +125,10 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } catch (err) {
       console.error('Error upgrading membership:', err);
       toast.error('Failed to process membership upgrade');
+    } finally {
+      // Reset confirmation state
+      setShowConfirmDialog(false);
+      setPendingUpgrade(null);
     }
   };
 
@@ -213,6 +238,34 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   return (
     <MembershipContext.Provider value={value}>
       {children}
+      
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Membership Plan</DialogTitle>
+            <DialogDescription>
+              Your current membership plan will be canceled, and any remaining days will be lost. 
+              Are you sure you want to proceed with this change?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowConfirmDialog(false);
+              setPendingUpgrade(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (pendingUpgrade) {
+                processMembershipUpgrade(pendingUpgrade.tier, pendingUpgrade.billingCycle);
+              }
+            }}>
+              Confirm Change
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MembershipContext.Provider>
   );
 };

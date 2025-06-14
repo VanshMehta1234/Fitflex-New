@@ -425,7 +425,7 @@ export default function Profile() {
                       
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Membership</h3>
-                        <p className="text-sm font-medium">{user?.membershipType || 'Elite'} <span className="text-green-500 ml-1">●</span></p>
+                        <p className="text-sm font-medium">{user?.membershipType || '   '} <span className="text-green-500 ml-1">●</span></p>
                       </div>
                     </div>
                   </div>

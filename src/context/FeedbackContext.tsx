@@ -337,7 +337,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               try {
                 const { data: profilesData, error: profilesError } = await supabase
                   .from("profiles")
-                  .select("id, name, email, profile_image")
+                  .select("id, name, email, profile_image, membership_type")
                   .in("id", chunk);
                 
                 if (profilesError) {
@@ -351,6 +351,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
                     const userProfile: UserProfile = {
                       ...profile,
                       profileImage: profile.profile_image,
+                      membershipType: profile.membership_type,
                     };
                     
                     // Store in our local result

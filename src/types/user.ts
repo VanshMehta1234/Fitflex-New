@@ -3,7 +3,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 // Extend the Supabase User type with our custom properties
 export interface ExtendedUser extends SupabaseUser {
   streak?: number;
-  membershipType?: string;
+  membershipType: string;
   name?: string;
   profileImage?: string;
 }

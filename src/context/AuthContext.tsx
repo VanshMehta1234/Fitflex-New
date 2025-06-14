@@ -77,12 +77,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!currentUser) return null; // Should not happen if user.id exists
 
           const profileImage = userProfile.profileImage || userProfile.profile_image;
-          
+          console.log('userProfile',userProfile);
           const newExtendedUser: ExtendedUser = {
             ...currentUser, // Preserve existing fields from currentUser (like email, auth related fields)
             id: currentUser.id, // Ensure id from currentUser is preserved
             streak: userProfile.streak,
-            membershipType: userProfile.membershipType,
+            membershipType: userProfile.membership_type || 'Basic1',
             name: userProfile.name,
             profileImage: profileImage,
             // Note: 'role' is handled by setUserRole separately below, 
@@ -185,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('Error loading user profile in handleAuthChange:', error);
         // Set basic user from session if profile fetch fails
-        setUser(session.user); 
+        setUser(session.user as AppUser); 
         setUserRole('user');
       }
     } else {
