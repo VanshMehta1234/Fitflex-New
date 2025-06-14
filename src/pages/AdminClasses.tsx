@@ -608,12 +608,20 @@ export default function AdminClasses() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="date">Date</Label>
-                  <DatePicker
+                  {/* <DatePicker
                     date={selectedDate}
                     setDate={setSelectedDate}
                     placeholder="Select date"
                     fromDate={new Date()}
                     toDate={addYears(new Date(), 1)}
+                  /> */}
+                  <DatePicker 
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                    fromDate={new Date()}
+                    toDate={addYears(new Date(), 1)}
+                    placeholder="Select date"
+                    className="border-gray-300 dark:border-gray-700"
                   />
                 </div>
                 

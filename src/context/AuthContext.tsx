@@ -12,9 +12,7 @@ const createUserProfile = async (userId: string, role: UserRole = 'user') => {
       .from('profiles')
       .insert([{ 
         id: userId, 
-        role,
-        streak: 0,
-        membershipType: 'Basic'
+        role
       }]);
 
     if (error) {
@@ -270,7 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Show error for other issues
         console.error('Error signing out:', error);
-        toast.error(error.message);
+        //toast.error(error.message);
         return;
       }
       

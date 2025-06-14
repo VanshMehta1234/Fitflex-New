@@ -172,28 +172,6 @@ export default function Refer() {
       });
   };
 
-  // Handle sharing
-  const handleShare = () => {
-    const codeToUse = generatedCode || activeReferral?.referral_code;
-    if (!codeToUse) {
-      toast.error("No referral code available");
-      return;
-    }
-    
-    const shareMessage = `Join me at Fitflex Gym! Use my referral code for 500 XP bonus: ${codeToUse}`;
-    
-    navigator.clipboard.writeText(shareMessage)
-      .then(() => {
-        toast.success("Message copied! Paste it to share with friends.", {
-          duration: 4000
-        });
-      })
-      .catch(async (err) => {
-        console.error("Clipboard error:", err);
-        toast.error("Couldn't copy automatically. Please copy the code manually.");
-      });
-  };
-
   // Handle creating a new referral code
   const handleCreateReferral = async () => {
     try {
@@ -305,13 +283,6 @@ export default function Refer() {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <Button 
-                      onClick={handleShare} 
-                      className="flex-1"
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </Button>
                     <Button 
                       variant="outline" 
                       onClick={handleCreateReferral}

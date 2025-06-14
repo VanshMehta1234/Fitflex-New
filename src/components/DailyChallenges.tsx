@@ -200,10 +200,10 @@ export const DailyChallenges: React.FC = () => {
           variant="outline" 
           size="sm" 
           className="w-full text-xs"
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate('/leaderboard')}
         >
-          <Share2 className="h-3 w-3 mr-2" />
-          Share your progress
+          <Trophy className="h-3 w-3 mr-2" />
+          View Leaderboard
         </Button>
       </CardFooter>
     </Card>

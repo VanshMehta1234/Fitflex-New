@@ -8,6 +8,7 @@ import { ClassProvider } from './context/ClassContext';
 import { ReferralProvider } from './context/ReferralContext';
 import { ModalProvider } from './context/ModalContext';
 import { LeaderboardProvider } from './context/LeaderboardContext';
+import { MembershipProvider } from './context/MembershipContext';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -30,6 +31,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import RedirectIfAuthenticated from './components/RedirectIfAuthenticated';
 import { XpNotificationManager } from './components/XpNotification';
+import MembershipPlans from './pages/MembershipPlans';
+import MembershipSuccess from './pages/MembershipSuccess';
 
 // Create a component for the app routes to separate UI rendering from data context
 const AppRoutes = () => (
@@ -54,6 +57,8 @@ const AppRoutes = () => (
         <Route path="/xp-rewards" element={<XpRewards />} />
         <Route path="/example" element={<ExamplePage />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/membership" element={<MembershipPlans />} />
+        <Route path="/membership/success" element={<MembershipSuccess />} />
         
         <Route element={<RoleBasedRoute allowedRoles={['admin']} />}>
           <Route path="/admin/user-attendance" element={<UserAttendance />} />
@@ -115,15 +120,17 @@ function App() {
             <ClassProvider>
               <ReferralProvider>
                 <LeaderboardProvider>
-                  <ModalProvider>
-                    <XpNotificationManager>
-                      {/* Separate UI components from data providers */}
-                      <React.Fragment>
-                        <AppRoutes />
-                        <Toaster {...toastOptions} />
-                      </React.Fragment>
-                    </XpNotificationManager>
-                  </ModalProvider>
+                  <MembershipProvider>
+                    <ModalProvider>
+                      <XpNotificationManager>
+                        {/* Separate UI components from data providers */}
+                        <React.Fragment>
+                          <AppRoutes />
+                          <Toaster {...toastOptions} />
+                        </React.Fragment>
+                      </XpNotificationManager>
+                    </ModalProvider>
+                  </MembershipProvider>
                 </LeaderboardProvider>
               </ReferralProvider>
             </ClassProvider>

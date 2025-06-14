@@ -243,7 +243,7 @@ export const bookClass = async (classId: string, userId: string): Promise<ClassB
     // Calculate available spots
     const { data: existingBookings, error: bookingCountError } = await supabase
       .from('class_bookings')
-      .select('id')
+      .select('*')
       .eq('class_id', classId)
       .neq('attendance_status', 'cancelled');
 

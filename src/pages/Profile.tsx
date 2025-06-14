@@ -56,6 +56,7 @@ export default function Profile() {
         email: user.email || '',
         profileImage: user.profileImage || ''
       });
+      console.log('user',user);
     }
   }, [user]);
   
@@ -255,7 +256,7 @@ export default function Profile() {
                   
                   <div className="flex items-center mt-3 space-x-2">
                     <span className="text-xs bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-1 rounded-full font-medium">
-                      {user?.membershipType || 'Basic'}
+                      {user?.membershipType || 'Elite'}
                     </span>
                     <span className="text-xs bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full font-medium">
                       Level {userLevel}
@@ -307,7 +308,7 @@ export default function Profile() {
                       <div className="flex justify-between items-center mb-3">
                         <span className="text-sm font-medium">Membership</span>
                         <span className="text-sm bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-2 py-1 rounded-full font-medium">
-                          {user?.membershipType || 'Basic'}
+                          {user?.membershipType || 'Elite'}
                         </span>
                       </div>
                       
@@ -424,7 +425,7 @@ export default function Profile() {
                       
                       <div>
                         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Membership</h3>
-                        <p className="text-sm font-medium">{user?.membershipType || 'Basic'} <span className="text-green-500 ml-1">●</span></p>
+                        <p className="text-sm font-medium">{user?.membershipType || 'Elite'} <span className="text-green-500 ml-1">●</span></p>
                       </div>
                     </div>
                   </div>

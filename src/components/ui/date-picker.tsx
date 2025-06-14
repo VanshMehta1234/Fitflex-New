@@ -1,5 +1,4 @@
 import * as React from "react";
-// Removed import: import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -37,7 +36,7 @@ export function DatePicker({
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
-            !date && "text-gray-500",
+            !date && "text-muted-foreground",
             className
           )}
           disabled={disabled}
@@ -46,8 +45,7 @@ export function DatePicker({
           {date ? format(date, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      {/* Removed PopoverPrimitive.Portal wrapper */}
-      <PopoverContent className="w-auto p-0 z-[99999]" align="start" side="top">
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={date}
@@ -57,7 +55,6 @@ export function DatePicker({
           toDate={toDate}
         />
       </PopoverContent>
-      {/* Removed PopoverPrimitive.Portal wrapper */}
     </Popover>
   );
 } 
