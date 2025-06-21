@@ -40,10 +40,10 @@ const UserAttendance: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedUser, setSelectedUser] = useState<UserWithAttendance | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Selected month for calendar
   const [month, setMonth] = useState<Date>(new Date());
-  
+
   // Calendar days in current month
   const days = eachDayOfInterval({
     start: startOfMonth(month),
@@ -55,7 +55,7 @@ const UserAttendance: React.FC = () => {
     if (!user) {
       return;
     }
-    
+
     if (userRole !== 'admin') {
       toast.error("Access denied: Admin privileges required");
       navigate('/home');
@@ -72,33 +72,33 @@ const UserAttendance: React.FC = () => {
         .from('profiles')
         .select('*')
         .order('name');
-      
+
       if (usersError) throw usersError;
-      
+
       if (!usersData || usersData.length === 0) {
         setUsers([]);
         setLoading(false);
         return;
       }
-      
+
       const firstDay = startOfMonth(month);
       const lastDay = endOfMonth(month);
-      
+
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('*')
         .gte('check_in_time', firstDay.toISOString())
         .lte('check_in_time', lastDay.toISOString());
-      
+
       if (attendanceError) throw attendanceError;
-      
+
       const usersWithAttendance: UserWithAttendance[] = usersData.map((userData: User) => ({
         ...userData,
         attendances: attendanceData?.filter(a => a.user_id === userData.id) || []
       }));
-      
+
       setUsers(usersWithAttendance);
-      
+
     } catch (error) {
       console.error("Error loading users data:", error);
       toast.error("Failed to load users data");
@@ -130,8 +130,8 @@ const UserAttendance: React.FC = () => {
     let filtered = [...users];
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(u => 
-        (u.name?.toLowerCase().includes(query)) || 
+      filtered = filtered.filter(u =>
+        (u.name?.toLowerCase().includes(query)) ||
         (u.email?.toLowerCase().includes(query))
       );
     }
@@ -149,9 +149,9 @@ const UserAttendance: React.FC = () => {
   const getAttendanceForDay = (userId: string, date: Date) => {
     const user = users.find(u => u.id === userId);
     if (!user) return [];
-    
+
     const targetDate = startOfDay(date);
-    
+
     return user.attendances.filter(attendance => {
       const attendanceDate = startOfDay(new Date(attendance.check_in_time));
       return isEqual(attendanceDate, targetDate);
@@ -161,29 +161,29 @@ const UserAttendance: React.FC = () => {
   const UserCalendar = ({ userId }: { userId: string }) => {
     const user = users.find(u => u.id === userId);
     if (!user) return null;
-    
+
     return (
       <div className="p-3">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-medium">{user.name || user.email}'s Attendance</h3>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1))}
             >
-              <CalendarIcon className="h-4 w-4 mr-1" /> 
+              <CalendarIcon className="h-4 w-4 mr-1" />
               Previous Month
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setMonth(new Date())}
             >
               Current Month
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1))}
             >
@@ -191,13 +191,13 @@ const UserAttendance: React.FC = () => {
             </Button>
           </div>
         </div>
-        
+
         <div className="text-center mb-2">
           <h4 className="text-lg font-medium">
             {format(month, 'MMMM yyyy')}
           </h4>
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="text-center text-sm font-medium">
@@ -205,15 +205,15 @@ const UserAttendance: React.FC = () => {
             </div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1">
           {days.map(day => {
             // Get attendance for this day
             const dayAttendances = getAttendanceForDay(userId, day);
             const hasAttendance = dayAttendances.length > 0;
-            
+
             return (
-              <div 
+              <div
                 key={day.toString()}
                 className={`
                   p-2 border rounded-md text-center h-12 flex items-center justify-center
@@ -236,13 +236,13 @@ const UserAttendance: React.FC = () => {
             );
           })}
         </div>
-        
+
         {/* Attendance details for selected date */}
         <div className="mt-6">
           <h3 className="text-lg font-medium mb-3">
             {format(selectedDate, 'MMMM d, yyyy')}
           </h3>
-          
+
           {getAttendanceForDay(userId, selectedDate).length > 0 ? (
             <div className="space-y-3">
               {getAttendanceForDay(userId, selectedDate).map((attendance) => (
@@ -275,61 +275,61 @@ const UserAttendance: React.FC = () => {
 
   return (
     <MainLayout>
-    <div className="container px-4 py-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <CalendarCheck className="h-6 w-6 text-primary" />
+      <div className="container px-4 py-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <CalendarCheck className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">User Attendance</h1>
+            <p className="text-sm text-muted-foreground">
+              Track and manage attendance records for all members
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">User Attendance</h1>
-          <p className="text-sm text-muted-foreground">
-            Track and manage attendance records for all members
-          </p>
+
+        <div className="grid gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-2">
+            <MemoizedUserList
+              filteredUsers={filteredUsers}
+              loading={loading}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              selectedUser={selectedUser}
+              setSelectedUser={setSelectedUser}
+              handleRefresh={handleRefresh}
+              refreshing={refreshing}
+              days={days} // days is already memoized by being outside or from useMemo if month changes
+            />
+          </div>
+
+          <div className="lg:col-span-3">
+            {selectedUser ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Attendance Calendar</CardTitle>
+                  <CardDescription>Monthly attendance record</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <UserCalendar userId={selectedUser.id} />
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="flex items-center justify-center min-h-[500px] text-center">
+                  <div className="max-w-md">
+                    <CalendarCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-xl font-medium mb-2">Select a User</h3>
+                    <p className="text-muted-foreground">
+                      Select a user from the list to view their detailed attendance records and calendar.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
-      
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <MemoizedUserList
-            filteredUsers={filteredUsers}
-            loading={loading}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedUser={selectedUser}
-            setSelectedUser={setSelectedUser}
-            handleRefresh={handleRefresh}
-            refreshing={refreshing}
-            days={days} // days is already memoized by being outside or from useMemo if month changes
-          />
-        </div>
-        
-        <div className="lg:col-span-3">
-          {selectedUser ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Attendance Calendar</CardTitle>
-                <CardDescription>Monthly attendance record</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <UserCalendar userId={selectedUser.id} />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="flex items-center justify-center min-h-[500px] text-center">
-                <div className="max-w-md">
-                  <CalendarCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-medium mb-2">Select a User</h3>
-                  <p className="text-muted-foreground">
-                    Select a user from the list to view their detailed attendance records and calendar.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
     </MainLayout>
   );
 };
@@ -384,8 +384,8 @@ const UserListComponent: React.FC<UserListProps> = ({
               Refresh
             </Button>
           </div>
-        </div>  
-        
+        </div>
+
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
@@ -406,9 +406,9 @@ const UserListComponent: React.FC<UserListProps> = ({
                 // Ensure days array is not empty to avoid division by zero
                 const attendanceCount = user.attendances.length;
                 const attendancePercentage = days.length > 0 ? Math.round((attendanceCount / days.length) * 100) : 0;
-                
+
                 return (
-                  <div 
+                  <div
                     key={user.id}
                     className={`
                       flex items-center p-4 border rounded-lg cursor-pointer transition-colors
@@ -419,14 +419,18 @@ const UserListComponent: React.FC<UserListProps> = ({
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                       <CalendarCheck className="h-6 w-6 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{user.name || 'Unnamed User'}</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="flex flex-wrap justify-between items-start gap-2 w-full">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{user.name || 'Unnamed User'}</div>
+                        <div className="text-sm text-muted-foreground break-words">{user.email}</div>
+                      </div>
+
+                      <div className="text-left sm:text-right min-w-[100px]">
+                        <div className="font-medium">{attendanceCount} days</div>
+                        <div className="text-sm text-muted-foreground break-words">{attendancePercentage}% this month</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">{attendanceCount} days</div>
-                      <div className="text-sm text-muted-foreground">{attendancePercentage}% this month</div>
-                    </div>
+
                   </div>
                 );
               })

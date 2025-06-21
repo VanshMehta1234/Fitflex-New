@@ -87,7 +87,7 @@ export default function MembershipPlans() {
   if (isLoading || membershipLoading) {
     return (
       <MainLayout>
-        <div className="container max-w-6xl mx-auto py-8">
+        <div className="container max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           <div className="flex flex-col justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <span className="text-lg">Loading membership plans...</span>
@@ -99,13 +99,13 @@ export default function MembershipPlans() {
 
   return (
     <MainLayout>
-      <div className="container max-w-6xl mx-auto py-8">
+      <div className="container max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Choose Your Membership Plan</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Membership Plan</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Select the membership that fits your fitness goals. All plans include access to our mobile app and community features.
           </p>
-          
+
           <div className="flex items-center justify-center mt-6">
             <div className="flex items-center space-x-2">
               <Label htmlFor="billing-toggle" className={!yearlyBilling ? "font-medium" : "text-muted-foreground"}>
@@ -134,22 +134,22 @@ export default function MembershipPlans() {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {plans.map((plan) => {
             const { savings, savingsPercentage } = calculateSavings(plan.monthlyPrice, plan.yearlyPrice);
             const price = yearlyBilling ? plan.yearlyPrice : plan.monthlyPrice;
             const isCurrentUserPlan = isCurrentPlan(plan.tier);
-            
+
             // Ensure features is always an array
-            const features = Array.isArray(plan.features) 
-              ? plan.features 
-              : typeof plan.features === 'string' 
-                ? [plan.features] 
+            const features = Array.isArray(plan.features)
+              ? plan.features
+              : typeof plan.features === 'string'
+                ? [plan.features]
                 : [];
-            
+
             return (
-              <Card 
-                key={plan.id} 
+              <Card
+                key={plan.id}
                 className={`flex flex-col ${plan.isPopular ? 'border-primary shadow-lg' : ''}`}
               >
                 {plan.isPopular && (
@@ -175,7 +175,7 @@ export default function MembershipPlans() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2 mt-6">
                     {features.map((feature, index) => (
                       <div key={index} className="flex items-start">
@@ -186,8 +186,8 @@ export default function MembershipPlans() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     variant={isCurrentUserPlan ? "outline" : (plan.isPopular ? "default" : "outline")}
                     onClick={() => handleSelectPlan(plan.tier)}
                     disabled={isCurrentUserPlan || !!processingPlan}

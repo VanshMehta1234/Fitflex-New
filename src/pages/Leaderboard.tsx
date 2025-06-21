@@ -5,14 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { 
-  Trophy, 
-  Medal, 
-  Award, 
-  Calendar, 
-  User, 
-  Clock, 
-  RotateCw, 
+import {
+  Trophy,
+  Medal,
+  Award,
+  Calendar,
+  User,
+  Clock,
+  RotateCw,
   Star,
   ChevronLeft,
   ChevronRight
@@ -53,44 +53,44 @@ const formatTabName = (tab: string): string => {
 const ITEMS_PER_PAGE = 10;
 
 export default function Leaderboard() {
-  const { 
-    leaderboard, 
-    userRank, 
-    totalUsers, 
-    isLoading, 
-    selectedPeriod, 
-    setSelectedPeriod, 
-    refreshLeaderboard 
+  const {
+    leaderboard,
+    userRank,
+    totalUsers,
+    isLoading,
+    selectedPeriod,
+    setSelectedPeriod,
+    refreshLeaderboard
   } = useLeaderboard();
   const { user } = useAuth();
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Reset page when tab changes
   React.useEffect(() => {
     setCurrentPage(1);
   }, [selectedPeriod]);
-  
+
   // Find current user in leaderboard
   const userPosition = useMemo(() => {
     if (!user) return null;
     return leaderboard.find(item => item.id === user.id);
   }, [leaderboard, user]);
-  
+
   // Determine current user's actual rank
   const currentUserRank = userPosition?.rank || userRank;
-  
+
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(leaderboard.length / ITEMS_PER_PAGE));
-  
+
   // Debug logging
   useEffect(() => {
     console.log(`Leaderboard data: ${leaderboard.length} items`);
     console.log(`Total pages: ${totalPages}`);
     console.log(`Should show pagination: ${leaderboard.length > ITEMS_PER_PAGE}`);
   }, [leaderboard.length, totalPages]);
-  
+
   // Get current page data
   const currentLeaderboardData = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -100,20 +100,20 @@ export default function Leaderboard() {
   }, [leaderboard, currentPage]);
 
   console.log('Current leaderboard data:', currentLeaderboardData);
-  
+
   // Page navigation
   const goToNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1);
     }
   };
-  
+
   const goToPrevPage = () => {
     if (currentPage > 1) {
       setCurrentPage(prev => prev - 1);
     }
   };
-  
+
   return (
     <MainLayout>
       <div className="container px-4 py-6 max-w-5xl mx-auto">
@@ -129,7 +129,7 @@ export default function Leaderboard() {
               </p>
             </div>
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -149,14 +149,14 @@ export default function Leaderboard() {
             )}
           </Button>
         </div>
-        
+
         {/* User's rank card */}
         <Card className="mb-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-md">Your Position</CardTitle>
             <CardDescription>
-              {selectedPeriod === 'all-time' 
-                ? 'Based on total XP earned' 
+              {selectedPeriod === 'all-time'
+                ? 'Based on total XP earned'
                 : selectedPeriod === 'weekly'
                   ? 'Based on XP earned this week'
                   : 'Based on XP earned this month'
@@ -189,7 +189,7 @@ export default function Leaderboard() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-col items-center justify-center">
                   <div className="text-3xl font-bold flex items-center gap-2">
                     {getRankIcon(currentUserRank)}
@@ -203,7 +203,7 @@ export default function Leaderboard() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Leaderboard tabs and content */}
         <Tabs value={selectedPeriod} onValueChange={(value: string) => setSelectedPeriod(value as 'all-time' | 'weekly' | 'monthly')}>
           <TabsList className="mb-6 grid grid-cols-3 w-full md:w-auto">
@@ -220,7 +220,7 @@ export default function Leaderboard() {
               Monthly
             </TabsTrigger>
           </TabsList>
-          
+
           {/* Render same content for all tabs, but data is filtered in context */}
           {['all-time', 'weekly', 'monthly'].map((period) => (
             <TabsContent key={period} value={period} className="mt-0">
@@ -228,7 +228,7 @@ export default function Leaderboard() {
                 <CardHeader className="pb-2">
                   <CardTitle>{formatTabName(period)} Leaderboard</CardTitle>
                   <CardDescription>
-                    {period === 'all-time' 
+                    {period === 'all-time'
                       ? 'Top members based on total XP earned'
                       : period === 'weekly'
                         ? 'Top members based on XP earned this week'
@@ -253,11 +253,10 @@ export default function Leaderboard() {
                     <>
                       <div className="divide-y divide-border">
                         {currentLeaderboardData.map((item) => (
-                          <div 
-                            key={item.id} 
-                            className={`flex items-center justify-between p-4 ${
-                              item.id === user?.id ? 'bg-primary-50 dark:bg-primary-950/20' : ''
-                            }`}
+                          <div
+                            key={item.id}
+                            className={`flex items-center justify-between p-4 ${item.id === user?.id ? 'bg-primary-50 dark:bg-primary-950/20' : ''
+                              }`}
                           >
                             <div className="flex items-center space-x-4">
                               <div className="flex items-center justify-center w-8 h-8">
@@ -281,16 +280,16 @@ export default function Leaderboard() {
                           </div>
                         ))}
                       </div>
-                      
+
                       {/* Pagination controls - always show */}
                       <div className="flex items-center justify-between border-t p-4">
                         <div className="text-sm text-muted-foreground">
                           Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, leaderboard.length)} of {leaderboard.length}
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={goToPrevPage}
                             disabled={currentPage === 1}
                             className="h-8 w-8 p-0"
@@ -301,9 +300,9 @@ export default function Leaderboard() {
                           <div className="text-sm">
                             Page {currentPage} of {totalPages}
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={goToNextPage}
                             disabled={currentPage === totalPages}
                             className="h-8 w-8 p-0"
@@ -319,7 +318,7 @@ export default function Leaderboard() {
                       <Trophy className="h-12 w-12 text-gray-400 mb-2" />
                       <h3 className="text-lg font-medium">No data available</h3>
                       <p className="text-sm text-muted-foreground">
-                        {period === 'all-time' 
+                        {period === 'all-time'
                           ? 'No members have earned XP yet'
                           : period === 'weekly'
                             ? 'No XP earned this week yet'
