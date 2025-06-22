@@ -109,23 +109,27 @@ const UserAttendance: React.FC = () => {
   }, [month]); // month is a dependency here
 
   // Ensure user is admin - moved this up to group useEffects
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-    if (userRole !== 'admin') {
-      toast.error("Access denied: Admin privileges required");
-      navigate('/home');
-    }
-  }, [user, userRole, navigate]);
+  // useEffect(() => {
+  //   if (!user) {
+  //     return;
+  //   }
+  //   if (userRole !== 'admin') {
+  //     toast.error("Access denied: Admin privileges required");
+  //     navigate('/home');
+  //   }
+  // }, [user, userRole, navigate]);
 
   // Load users and attendance data - moved this up
+  // useEffect(() => {
+  //   if (userRole === 'admin') {
+  //     loadUsersData();
+  //   }
+  // }, [userRole, loadUsersData]); // loadUsersData is now a dependency
   useEffect(() => {
-    if (userRole === 'admin') {
+    if (user && userRole === 'admin') {
       loadUsersData();
     }
-  }, [userRole, loadUsersData]); // loadUsersData is now a dependency
-
+  }, [user, userRole, loadUsersData]);
   const filteredUsers = useMemo(() => {
     let filtered = [...users];
     if (searchQuery) {
