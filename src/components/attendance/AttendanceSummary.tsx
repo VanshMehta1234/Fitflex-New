@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { CheckCircle2, Calendar, Flame, Trophy } from "lucide-react";
@@ -6,11 +6,7 @@ import { useAttendance } from "../../context/AttendanceContext";
 import { format } from "date-fns";
 
 export const AttendanceSummary: React.FC = () => {
-  const { checkedIn, loading, streak, longestStreak, refreshAttendance } = useAttendance();
-
-  useEffect(() => {
-    refreshAttendance();
-  }, []);
+  const { checkedIn, loading, streak, longestStreak } = useAttendance();
 
   if (loading) {
     return (

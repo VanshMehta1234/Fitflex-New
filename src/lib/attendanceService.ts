@@ -161,7 +161,6 @@ const attendanceService = {
       console.error('Error checking today\'s attendance:', error);
       return null;
     }
-
     return data || null;
   },
 
@@ -184,24 +183,6 @@ const attendanceService = {
     return data?.streak_count || 0;
   },
 
-  // Get user's longest streak
-  async getLongestStreak(userId: string): Promise<number> {
-    const { data, error } = await supabase
-      .from('attendance')
-      .select('streak_count')
-      .eq('user_id', userId)
-      .eq('is_streak_day', true)
-      .order('streak_count', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching longest streak:', error);
-      return 0;
-    }
-
-    return data?.streak_count || 0;
-  },
 
   // Get all user attendance for a specific month (for admin)
   async getAllUserAttendance(year: number, month: number): Promise<Attendance[]> {

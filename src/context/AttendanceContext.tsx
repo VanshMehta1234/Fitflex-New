@@ -10,7 +10,7 @@ interface AttendanceContextType {
   streak: number;
   longestStreak: number;
   handleCheckIn: () => Promise<void>;
-  refreshAttendance: () => Promise<void>;
+  checkStatus: () => Promise<void>;
 }
 
 const AttendanceContext = createContext<AttendanceContextType | undefined>(undefined);
@@ -41,15 +41,10 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setCheckedIn(!!todayCheckIn);
       if (todayCheckIn) {
         setLastCheckIn(todayCheckIn.check_in_time);
+        setStreak(todayCheckIn.streak_count || 0);
+        setLongestStreak(todayCheckIn.streak_count || 0);
       }
-      
-      // Get current streak
-      const currentStreak = await attendanceService.getCurrentStreak(user.id);
-      setStreak(currentStreak);
-      
-      // Get longest streak
-      const maxStreak = await attendanceService.getLongestStreak(user.id);
-      setLongestStreak(maxStreak);
+
     } catch (error) {
       console.error("Error checking attendance status:", error);
     } finally {
@@ -69,11 +64,6 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setLoading(false); // Ensure loading is false if no user
     }
   }, [user?.id]); // Depend on user.id for stability
-
-  const refreshAttendance = async () => {
-    // setLoading(true) is now handled by checkStatus if it proceeds
-    await checkStatus();
-  };
 
   const handleCheckIn = async () => {
     if (!user) {
@@ -135,7 +125,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       streak,
       longestStreak,
       handleCheckIn,
-      refreshAttendance
+      checkStatus
     }}>
       {children}
     </AttendanceContext.Provider>
