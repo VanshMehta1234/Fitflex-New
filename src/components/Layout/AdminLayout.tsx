@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { MainLayout } from './MainLayout';
-import { BarChart, Users, MessageSquare, Settings, Shield } from 'lucide-react';
+import { BarChart, Users, MessageSquare, Settings, Shield, Package } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -59,6 +59,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             >
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
               <span>Feedback Analysis</span>
+            </button>
+            
+            <button
+              onClick={() => navigate('/admin/store')}
+              className="flex items-center gap-2 w-full p-2 rounded-md hover:bg-muted-foreground/10 transition-colors"
+            >
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span>Store Management</span>
             </button>
             
             <button

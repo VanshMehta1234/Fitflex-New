@@ -9,6 +9,7 @@ import { ReferralProvider } from './context/ReferralContext';
 import { ModalProvider } from './context/ModalContext';
 import { LeaderboardProvider } from './context/LeaderboardContext';
 import { MembershipProvider } from './context/MembershipContext';
+import { StoreProvider } from './context/StoreContext';
 import { Toaster } from 'react-hot-toast';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -33,6 +34,8 @@ import RedirectIfAuthenticated from './components/RedirectIfAuthenticated';
 import { XpNotificationManager } from './components/XpNotification';
 import MembershipPlans from './pages/MembershipPlans';
 import MembershipSuccess from './pages/MembershipSuccess';
+import Store from './pages/Store';
+import AdminStore from './pages/AdminStore';
 
 // Create a component for the app routes to separate UI rendering from data context
 const AppRoutes = () => (
@@ -59,11 +62,13 @@ const AppRoutes = () => (
         <Route path="/settings" element={<Settings />} />
         <Route path="/membership" element={<MembershipPlans />} />
         <Route path="/membership/success" element={<MembershipSuccess />} />
+        <Route path="/store" element={<Store />} />
         
         <Route element={<RoleBasedRoute allowedRoles={['admin']} />}>
           <Route path="/admin/user-attendance" element={<UserAttendance />} />
           <Route path="/admin/classes" element={<AdminClasses />} />
           <Route path="/admin/weekly-feedback" element={<WeeklyFeedbackAnalysis />} />
+          <Route path="/admin/store" element={<AdminStore />} />
         </Route>
       </Route>
     </Routes>
@@ -121,7 +126,8 @@ function App() {
               <ReferralProvider>
                 <LeaderboardProvider>
                   <MembershipProvider>
-                    <ModalProvider>
+                    <StoreProvider>
+                      <ModalProvider>
                       <XpNotificationManager>
                         {/* Separate UI components from data providers */}
                         <React.Fragment>
@@ -129,7 +135,8 @@ function App() {
                           <Toaster {...toastOptions} />
                         </React.Fragment>
                       </XpNotificationManager>
-                    </ModalProvider>
+                                          </ModalProvider>
+                    </StoreProvider>
                   </MembershipProvider>
                 </LeaderboardProvider>
               </ReferralProvider>

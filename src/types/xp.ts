@@ -19,4 +19,5 @@ export type XpSource =
   | 'referral_redemption'
   | 'level_up'
   | 'profile_completion'
-  | 'social_share'; 
+  | 'social_share'
+  | 'store_purchase'; 

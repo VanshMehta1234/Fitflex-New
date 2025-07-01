@@ -20,7 +20,8 @@ import {
   Share2,
   Gift,
   Trophy,
-  Star
+  Star,
+  Package
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getInitials } from '../../lib/profileService';
@@ -47,6 +48,11 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
         icon: CalendarCheck,
         label: 'Weekly Feedback Analysis',
         path: '/admin/weekly-feedback',
+      },
+      {
+        icon: Package,
+        label: 'Store Management',
+        path: '/admin/store',
       },
       {
         icon: CalendarCheck,
@@ -98,6 +104,11 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       icon: Star,
       label: 'XP Rewards',
       path: '/xp-rewards',
+    },
+    {
+      icon: Gift,
+      label: 'XP Store',
+      path: '/store',
     },
     {
       icon: CreditCard,
