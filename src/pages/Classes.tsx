@@ -8,7 +8,7 @@ import { Input } from "../components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Progress } from "../components/ui/progress";
 import { ClassBookingModal } from "../components/ClassBookingModal";
 import { ClassCancelModal } from "../components/ClassCancelModal";
@@ -35,7 +35,9 @@ import {
   subMonths,
   isToday,
   isBefore,
-  startOfDay
+  startOfDay,
+  startOfWeek,
+  endOfWeek
 } from "date-fns";
 import { Class } from "../lib/classService";
 import { cn } from "../lib/utils";
@@ -61,10 +63,12 @@ export default function Classes() {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
 
-  // Get all days in the current month
+  // Get all days for the calendar view (including padding days from prev/next month)
+  const startOfCalendar = startOfWeek(startOfMonth(currentMonth));
+  const endOfCalendar = endOfWeek(endOfMonth(currentMonth));
   const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(currentMonth),
-    end: endOfMonth(currentMonth)
+    start: startOfCalendar,
+    end: endOfCalendar
   });
 
   // Filter classes by search term, type, level
