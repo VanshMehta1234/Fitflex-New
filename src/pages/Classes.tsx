@@ -16,10 +16,8 @@ import {
   Calendar as CalendarIcon, 
   Clock, 
   MapPin, 
-  Users, 
   Dumbbell, 
   CheckCircle, 
-  X,
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
@@ -50,7 +48,7 @@ type ClassesByDate = {
 
 export default function Classes() {
   const { user } = useAuth();
-  const { classes, userBookings, isLoading, bookClass, cancelBooking, isClassBooked, getBookingForClass } = useClasses();
+  const { classes, isLoading, bookClass, cancelBooking, isClassBooked, getBookingForClass } = useClasses();
   const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -257,7 +255,7 @@ export default function Classes() {
       <div 
         key={day.toString()}
         className={cn(
-          "h-14 p-1 border rounded-md",
+          "h-16 sm:h-14 p-1 border rounded-md transition-colors",
           !isSameMonth(day, currentMonth) && "opacity-40 bg-gray-50 dark:bg-gray-800/20",
           isSelected && "border-primary-500 dark:border-primary-400 bg-primary-50 dark:bg-primary-900/20",
           isToday(day) && "font-bold",
@@ -267,23 +265,23 @@ export default function Classes() {
         )}
         onClick={() => setSelectedDate(day)}
       >
-        <div className="text-center">
+        <div className="text-center h-full flex flex-col justify-center">
           <div className={cn(
-            "text-sm",
-            isToday(day) && "bg-primary-500 dark:bg-primary-600 text-white rounded-full w-6 h-6 flex items-center justify-center mx-auto"
+            "text-sm sm:text-base mb-1",
+            isToday(day) && "bg-primary-500 dark:bg-primary-600 text-white rounded-full w-7 h-7 sm:w-6 sm:h-6 flex items-center justify-center mx-auto text-sm"
           )}>
             {format(day, 'd')}
           </div>
           {hasClasses && (
-            <div className="flex justify-center mt-1 space-x-1">
+            <div className="flex justify-center space-x-1">
               {classesOnDay.length > 3 ? (
-                <span className="text-xs bg-green-500 text-white px-1 rounded-sm">{classesOnDay.length}</span>
+                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-sm">{classesOnDay.length}</span>
               ) : (
-                classesOnDay.map((cls, idx) => (
+                classesOnDay.slice(0, 3).map((cls, idx) => (
                   <div 
                     key={idx} 
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full",
+                      "w-2 h-2 sm:w-1.5 sm:h-1.5 rounded-full",
                       isClassBooked(cls.id) ? "bg-blue-500" : "bg-green-500"
                     )}
                   />
@@ -299,17 +297,17 @@ export default function Classes() {
   return (
     <MainLayout>
       <div className="container px-4 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Fitness Classes</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h1 className="text-xl sm:text-2xl font-bold">Fitness Classes</h1>
           
           <div className="flex gap-2">
             <Tabs 
               defaultValue={viewMode} 
               value={viewMode}
               onValueChange={(value: string) => setViewMode(value as 'list' | 'calendar')} 
-              className="hidden sm:block"
+              className="block"
             >
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
                 <TabsTrigger value="list">List</TabsTrigger>
               </TabsList>
@@ -318,8 +316,8 @@ export default function Classes() {
         </div>
         
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row gap-3 mb-6">
-          <div className="flex-1">
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="w-full">
             <Input
               placeholder="Search classes..."
               value={searchTerm}
@@ -328,9 +326,9 @@ export default function Classes() {
             />
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Class Type" />
               </SelectTrigger>
               <SelectContent>
@@ -347,7 +345,7 @@ export default function Classes() {
             </Select>
             
             <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full sm:w-[140px]">
                 <SelectValue placeholder="Level" />
               </SelectTrigger>
               <SelectContent>
@@ -373,27 +371,28 @@ export default function Classes() {
               <div className="space-y-6">
                 {/* Month Navigation */}
                 <div className="flex items-center justify-between mb-4">
-                  <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous Month
+                  <Button variant="outline" size="sm" onClick={handlePreviousMonth} className="flex-shrink-0">
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Previous</span>
                   </Button>
                   
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-lg sm:text-xl font-semibold text-center px-2">
                     {format(currentMonth, 'MMMM yyyy')}
                   </h2>
                   
-                  <Button variant="outline" size="sm" onClick={handleNextMonth}>
-                    Next Month
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                  <Button variant="outline" size="sm" onClick={handleNextMonth} className="flex-shrink-0">
+                    <span className="hidden sm:inline mr-1">Next</span>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
                 
                 {/* Calendar Grid */}
                 <div>
-                  <div className="grid grid-cols-7 gap-1 mb-1">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                      <div key={day} className="text-center text-sm font-medium py-1">
-                        {day}
+                  <div className="grid grid-cols-7 gap-1 mb-2">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                      <div key={day} className="text-center text-xs sm:text-sm font-medium py-2 text-gray-600 dark:text-gray-400">
+                        <span className="hidden sm:inline">{day}</span>
+                        <span className="sm:hidden">{day.charAt(0)}</span>
                       </div>
                     ))}
                   </div>
@@ -410,7 +409,7 @@ export default function Classes() {
                   </h3>
                   
                   {classesForSelectedDate.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                       {classesForSelectedDate.map(renderClassCard)}
                     </div>
                   ) : (
@@ -432,7 +431,7 @@ export default function Classes() {
             {viewMode === 'list' && (
               <div className="space-y-6">
                 {filteredClasses.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredClasses.map(renderClassCard)}
                   </div>
                 ) : (
