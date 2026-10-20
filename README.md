@@ -1,137 +1,134 @@
-# React Authentication App with Supabase
+<div align="center">
 
-This is a production-ready React application with full authentication functionality powered by Supabase.
+# FitFlex
 
-## Features
+### A connected workspace for fitness communities
 
-- User authentication (login, signup, logout)
-- Password reset functionality
-- Protected routes
-- Session persistence across page reloads
-- Role-based access control (admin and user roles)
-- Different dashboards for different user roles
-- Dashboard and home pages
-- Responsive design
+Member accounts, class bookings, attendance, engagement, and membership interfaces.
 
-## Reset Password Functionality
+![React](https://img.shields.io/badge/React_19-111827?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-111827?style=flat-square&logo=typescript&logoColor=3178C6)
+![Supabase](https://img.shields.io/badge/Supabase-111827?style=flat-square&logo=supabase&logoColor=3ECF8E)
 
-The app includes a complete password reset flow:
+[Hosted application](https://fitflex-new.vercel.app/) · [Membership setup](MEMBERSHIP_SETUP.md) · [Stripe integration notes](STRIPE_TESTING_GUIDE.md)
 
-1. User clicks "Forgot password?" on the login page
-2. User enters their email and receives a reset password link
-3. Clicking the link in the email takes them to the reset password page
-4. The system verifies the reset token in the URL
-5. User can enter a new password and confirm it
-6. On successful password change, they are redirected to login page
+</div>
 
-The reset password process is secure and robust:
-- Links expire after a period set by Supabase (typically 24 hours)
-- The system handles expired tokens gracefully
-- Users cannot reuse their old password
-- Passwords require minimum 6 characters for security
-- Password strength validation with visual feedback
+---
 
-## Setup
+FitFlex brings everyday fitness-community workflows into a member-facing application, with a separate set of administrative screens. The code demonstrates authentication, database-backed product features, reusable layouts, and a broad set of member engagement interfaces.
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Create a Supabase account and project at https://supabase.com
-4. Create a `.env` file in the root directory with your Supabase credentials:
-   ```
-   REACT_APP_SUPABASE_URL=your_supabase_url
-   REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-5. Start the development server:
-   ```
-   npm start
-   ```
+**Repository scope:** this public version is a **React/Create React App application**, not a Next.js app. It connects directly to Supabase. Membership and payment screens include demonstration behavior; this repository does not include a complete production billing backend.
 
-## Supabase Setup
+## Product areas
 
-1. Create a new project in Supabase
-2. Go to Authentication > Settings and enable Email provider
-3. Configure your project URL (the URL where your app is hosted)
-4. Set up the database by executing the SQL in `database-setup.sql` in the Supabase SQL Editor
-5. Make sure the following tables and columns are created:
-   - `profiles` table with the following columns:
-     - id (uuid, primary key)
-     - name (text)
-     - profile_image (text)
-     - role (text, default: 'user')
-     - streak (integer, default: 0)
-     - membershipType (text, default: 'Basic')
-     - created_at (timestamp with time zone, default: now())
-     - updated_at (timestamp with time zone, default: now())
-6. Copy your project URL and anon key from Project Settings > API and add them to your `.env` file
+| Area | Workflows represented in the code |
+| --- | --- |
+| **Member access** | Signup, login, password reset, session persistence, profile and settings. |
+| **Classes** | Class listings, details, booking interfaces, and admin class management. |
+| **Attendance** | Member check-in/history interfaces and administrative attendance views. |
+| **Engagement** | XP rewards, leaderboards, referrals, and weekly feedback. |
+| **Membership** | Plan selection, monthly/yearly pricing, checkout redirection, and membership history interfaces. |
+| **Store** | Member store and administrative store screens. |
 
-## Toast Notifications
+The project uses shared layouts, React context providers, route guards, service modules, and Supabase-backed records. Admin route guards improve navigation; database policies must enforce the actual access rules.
 
-The app uses `react-hot-toast` for displaying toast notifications. These are shown for:
-- Profile updates
-- Login/logout
-- Errors
-- Image uploads
-- Password reset emails and confirmations
+## How the pieces fit
 
-## Troubleshooting
+```mermaid
+flowchart LR
+    Member[Member] --> App[React application]
+    Admin[Administrator] --> App
+    App --> Auth[Supabase Auth]
+    App --> Data[Supabase data services]
+    App --> Checkout[Stripe checkout interface]
+```
 
-If profile updates are not working:
-1. Check that your Supabase URL and Anon Key are correctly set in the `.env` file
-2. Make sure the `profiles` table has been created in Supabase
-3. Verify that Row Level Security policies are set up correctly as defined in `database-setup.sql`
-4. Check the browser console for any errors
-5. Ensure you are logged in (authenticated) before trying to update a profile
-6. Run the `fix-profiles-table.sql` script in the Supabase SQL Editor to ensure all required columns exist
+**Stack:** React 19, TypeScript, React Router 6, Tailwind CSS 3, Radix UI components, Framer Motion, Supabase JS, and Stripe JS. The build tool is `react-scripts` 5.
 
-If password reset is not working:
-1. Verify your Supabase project has Email auth enabled in Authentication > Providers
-2. Make sure Site URL is correctly set in Authentication > URL Configuration
-3. Check for any CORS issues - add your site URL to the allowed domains
-4. Ensure your app URL is correctly set in the `.env` file
-5. Check browser console for any error messages
-6. Try clearing cache and cookies if the reset link doesn't work
+## Run locally
 
-## Fixing Database Issues
+You need Node.js/npm and a Supabase project configured for this application. The locked `react-scripts` package declares Node.js 14+; that is its package minimum, not a guarantee that every dependency works on every newer runtime.
 
-If you're experiencing issues with the profiles table, you can run the `fix-profiles-table.sql` script in the Supabase SQL Editor. This script:
+```bash
+git clone https://github.com/VanshMehta1234/Fitflex-New.git
+cd Fitflex-New
+npm ci
+```
 
-1. Checks if the profiles table exists and creates it if it doesn't
-2. Verifies all required columns exist and adds any missing ones
-3. Ensures Row Level Security is enabled
-4. Creates necessary RLS policies if they don't exist
-5. Creates an index on the user_id column for faster queries
+Create `.env` in the repository root:
 
-This script is designed to fix issues without modifying existing data.
+```dotenv
+REACT_APP_SUPABASE_URL=https://your-project.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-browser-safe-anon-key
+```
 
-## Project Structure
+Then run:
 
-- `/src/components` - Reusable UI components
-- `/src/context` - React context for authentication
-- `/src/pages` - Main application pages
-- `/src/styles` - CSS stylesheets
-- `/src/supabase.ts` - Supabase client configuration
+```bash
+npm start
+```
 
-## Available Scripts
+Open [localhost:3000](http://localhost:3000). The existing `.env.example` contains commented Stripe examples; it does not currently provide the two required Supabase variables above.
 
-- `npm start` - Run the development server
-- `npm build` - Build the app for production
-- `npm test` - Run tests
-- `npm eject` - Eject from create-react-app
+### Database prerequisites
 
-## Deployment
+The frontend expects an existing schema, policies, storage configuration, and helper functions. Service modules reference records such as `profiles`, `attendance`, `classes`, `class_bookings`, `membership_plans`, `memberships`, and payment history. Other engagement/store features have additional requirements.
 
-To deploy the application:
+**This checkout has no SQL migration files.** Older instructions referenced `database-setup.sql` and `fix-profiles-table.sql`, but those files are not included. Obtain the matching database setup from the project owner before expecting a fresh Supabase project to support all screens. Do not substitute an incomplete schema based only on the table names listed here.
 
-1. Build the app with `npm run build`
-2. Deploy the build folder to your hosting provider of choice
-3. Ensure you've set up the environment variables on your hosting platform
+Enable the appropriate email authentication flow, configure redirect URLs for local and hosted environments, and verify database access policies and storage permissions. Only browser-safe Supabase credentials belong in `REACT_APP_` values; service-role and payment secret keys belong on a server.
 
-## Technologies Used
+## Membership and billing status
 
-- React
-- TypeScript
-- Supabase (Authentication & Database)
-- React Router
+| Implemented interface | Current boundary |
+| --- | --- |
+| Plan and billing-cycle selection | Can fall back to local sample plans when database reads fail. |
+| Stripe checkout redirection | Uses configured or fallback test identifiers; production payment behavior requires separate verification. |
+| Cancellation, pause, and resume controls | The Stripe service returns simulated success for these operations. |
+| Customer portal | Shows a demo-mode message rather than creating a server-side portal session. |
+| Payment methods and invoices | Stripe service helpers return sample data. |
+
+For checkout evaluation, set your own **test** publishable key and price IDs rather than relying on checked-in fallbacks. The service reads:
+
+```dotenv
+REACT_APP_STRIPE_PUBLISHABLE_KEY=your-test-publishable-key
+REACT_APP_STRIPE_BASIC_MONTHLY_PRICE_ID=your-test-price-id
+REACT_APP_STRIPE_BASIC_YEARLY_PRICE_ID=your-test-price-id
+REACT_APP_STRIPE_PREMIUM_MONTHLY_PRICE_ID=your-test-price-id
+REACT_APP_STRIPE_PREMIUM_YEARLY_PRICE_ID=your-test-price-id
+REACT_APP_STRIPE_ELITE_MONTHLY_PRICE_ID=your-test-price-id
+REACT_APP_STRIPE_ELITE_YEARLY_PRICE_ID=your-test-price-id
+```
+
+See the [Stripe guide](STRIPE_TESTING_GUIDE.md) for historical integration context. A production rollout needs authoritative server-side subscription state, verified webhooks, and real subscription-management endpoints.
+
+## Code map
+
+```text
+src/
+  App.tsx        Routes and provider composition
+  supabase.ts    Supabase browser client
+  pages/         Member and admin screens
+  components/    Shared layouts, route guards and UI
+  context/       Auth, classes, attendance, membership and engagement state
+  lib/           Database services and Stripe integration helpers
+  types/         Product data types
+public/          Static application assets
+```
+
+## Build and review
+
+| Command | Purpose |
+| --- | --- |
+| `npm start` | Start development server. |
+| `npm run build` | Produce the static `build/` directory. |
+| `npm test` | Run the existing React Scripts test runner; this is not full product coverage. |
+
+For static hosting, publish `build/`, provide the environment variables at build time, and configure an SPA fallback to `index.html` for direct route loads.
+
+A useful handover walkthrough covers account creation/reset, member/admin access, class booking, attendance, and membership screens against a matching development database. Verify billing separately from the demo UI.
+
+---
+
+Built by **Vansh Mehta** · [Portfolio](https://www.builtbyvansh.com/) · [Discuss a SaaS project](mailto:founder@builtbyvansh.com)
