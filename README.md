@@ -20,6 +20,12 @@ FitFlex brings everyday fitness-community workflows into a member-facing applica
 
 **Repository scope:** this public version is a **React/Create React App application**, not a Next.js app. It connects directly to Supabase. Membership and payment screens include demonstration behavior; this repository does not include a complete production billing backend.
 
+## Screenshot
+
+Public sign-in screen of the hosted application. Member and admin areas require an account.
+
+![FitFlex sign-in interface with email, password, and account-recovery links](https://github.com/user-attachments/assets/69650329-7ba6-4fc4-b700-a5798fbd265d)
+
 ## Product areas
 
 | Area | Workflows represented in the code |
