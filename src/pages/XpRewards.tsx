@@ -1,29 +1,14 @@
-import React from 'react';
-import { MainLayout } from '../components/Layout/MainLayout';
-import { PageHeader, PageContainer } from '../components/Layout';
+import { ArrowRight, Calendar, CheckCircle, Dumbbell, Flame, MessageSquare, Share2, Star, Trophy, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useXp } from '../context/XpContext';
-import { XP_REWARDS } from '../lib/xpRewardsService';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { PageContainer, PageHeader } from '../components/Layout';
+import { MainLayout } from '../components/Layout/MainLayout';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
-import { Separator } from '../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { 
-  Star, 
-  Calendar, 
-  Dumbbell, 
-  Users, 
-  MessageSquare, 
-  User, 
-  Trophy,
-  Flame,
-  Share2,
-  CheckCircle,
-  ArrowRight,
-  Clock
-} from 'lucide-react';
+import { useXp } from '../context/XpContext';
+import { XP_REWARDS } from '../lib/xpRewardsService';
 
 export default function XpRewards() {
   const navigate = useNavigate();
@@ -423,4 +408,4 @@ export default function XpRewards() {
       </PageContainer>
     </MainLayout>
   );
-} 
+}

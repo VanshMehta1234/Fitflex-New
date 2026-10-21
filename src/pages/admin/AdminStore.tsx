@@ -12,28 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Label } from '../../components/ui/label';
 import { Skeleton } from '../../components/ui/skeleton';
-import { 
-  getAllStoreItemsAdmin, 
-  createStoreItem, 
-  updateStoreItem, 
-  deleteStoreItem,
-  getStoreStats,
-  getAllPurchasesAdmin
-} from '../../lib/storeService';
+import { getAllStoreItemsAdmin, createStoreItem, updateStoreItem, deleteStoreItem, getStoreStats, getAllPurchasesAdmin } from '../../lib/storeService';
 import { StoreItem, StoreCategory, StoreStats, StorePurchase } from '../../types/store';
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  RefreshCw,
-  ShoppingBag,
-  BarChart3,
-  Users,
-  Star,
-  TrendingUp
-} from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Save, RefreshCw, ShoppingBag, BarChart3, Users, Star, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface ItemFormData {
@@ -168,7 +149,7 @@ export default function AdminStore() {
   }, [editingItem, formData, handleCloseForm, loadData]);
 
   const handleDeleteItem = useCallback(async (itemId: string, itemName: string) => {
-    if (!confirm(`Are you sure you want to delete "${itemName}"?`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${itemName}"?`)) return;
 
     try {
       const result = await deleteStoreItem(itemId);
@@ -586,4 +567,4 @@ export default function AdminStore() {
       </PageContainer>
     </AdminLayout>
   );
-} 
+}

@@ -1,6 +1,6 @@
-import { supabase } from '../supabase';
-import { XpTransaction, XpSource } from '../types/xp';
 import { showXpNotification } from '../components/XpNotification';
+import { supabase } from '../supabase';
+import { XpSource, XpTransaction } from '../types/xp';
 
 // Constants for XP requirements per level
 export const LEVEL_XP_REQUIREMENTS: Record<number, number> = {
@@ -74,7 +74,6 @@ export const addXpToUser = async (
     console.log(`Updating user XP: ${currentXp} → ${newXp}`);
     
     // Calculate current and new level
-    const currentLevel = userData.level || calculateLevelFromXp(currentXp);
     const newLevel = calculateLevelFromXp(newXp);
     
     // Record XP transaction
@@ -169,4 +168,4 @@ export const getUserTotalXp = async (userId: string): Promise<number> => {
     console.error('Error in getUserTotalXp:', error);
     return 0;
   }
-}; 
+};

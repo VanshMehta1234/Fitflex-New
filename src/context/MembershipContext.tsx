@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UserMembership, PaymentHistory, MembershipTier } from '../types/membership';
 import { membershipService } from '../lib/membershipService';
 import { stripeService } from '../lib/stripeService';
@@ -33,28 +33,18 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const [pendingUpgrade, setPendingUpgrade] = useState<{tier: MembershipTier, billingCycle: 'monthly' | 'yearly'} | null>(null);
 
-  // Fetch membership data when user changes
-  useEffect(() => {
-    if (user) {
-      refreshMembership();
-    } else {
-      setMembership(null);
-      setMembershipHistory(null);
-      setPaymentHistory([]);
-      setIsLoading(false);
-    }
-  }, [user]);
+  const userId = user?.id;
 
   // Refresh membership data
-  const refreshMembership = async () => {
-    if (!user) return;
+  const refreshMembership = useCallback(async () => {
+    if (!userId) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
       // Get current membership
-      const currentMembership = await membershipService.getCurrentMembership(user.id);
+      const currentMembership = await membershipService.getCurrentMembership(userId);
       setMembership(currentMembership);
       
       // If membership exists, get history
@@ -63,7 +53,7 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setMembershipHistory(history);
         
         // Get payment history
-        const payments = await membershipService.getPaymentHistory(user.id);
+        const payments = await membershipService.getPaymentHistory(userId);
         setPaymentHistory(payments);
       }
     } catch (err) {
@@ -73,7 +63,19 @@ export const MembershipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Fetch membership data when user changes
+  useEffect(() => {
+    if (userId) {
+      refreshMembership();
+    } else {
+      setMembership(null);
+      setMembershipHistory(null);
+      setPaymentHistory([]);
+      setIsLoading(false);
+    }
+  }, [userId, refreshMembership]);
 
   // Upgrade membership
   const upgradeMembership = async (tier: MembershipTier, billingCycle: 'monthly' | 'yearly') => {
@@ -276,4 +278,4 @@ export const useMembership = () => {
     throw new Error('useMembership must be used within a MembershipProvider');
   }
   return context;
-}; 
+};

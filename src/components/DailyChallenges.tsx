@@ -1,25 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { ArrowRight, Calendar, CheckCircle, Dumbbell, MessageSquare, Star, Trophy, User, Users } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { 
-  Calendar, 
-  Trophy, 
-  Users, 
-  MessageSquare, 
-  CheckCircle, 
-  Star, 
-  Dumbbell, 
-  Share2, 
-  ArrowRight,
-  User
-} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useXp } from '../context/XpContext';
-import { XP_REWARDS } from '../lib/xpRewardsService';
 import { cn } from '../lib/utils';
+import { XP_REWARDS } from '../lib/xpRewardsService';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 
 // Challenge type definition
 export interface Challenge {
@@ -36,7 +24,7 @@ export interface Challenge {
 export const DailyChallenges: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { userXp, xpTransactions } = useXp();
+  const { xpTransactions } = useXp();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   
   // Generate daily challenges based on user activity
@@ -297,4 +285,4 @@ export const XpEarningGuide: React.FC = () => {
       </CardFooter>
     </Card>
   );
-}; 
+};

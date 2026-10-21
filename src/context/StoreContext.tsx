@@ -1,16 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { getStoreItems, getUserInventory, getUserPurchases, purchaseStoreItem } from '../lib/storeService';
+import { StoreCategory, StoreItem, StorePurchase, UserInventory } from '../types/store';
 import { useAuth } from './AuthContext';
 import { useXp } from './XpContext';
-import { StoreItem, StorePurchase, UserInventory, StoreCategory } from '../types/store';
-import { 
-  getStoreItems, 
-  getStoreItemsByCategory, 
-  purchaseStoreItem, 
-  getUserPurchases, 
-  getUserInventory,
-  clearStoreCache
-} from '../lib/storeService';
-import toast from 'react-hot-toast';
 
 interface StoreContextType {
   // Store items
@@ -215,4 +208,4 @@ export const useStore = () => {
     throw new Error('useStore must be used within a StoreProvider');
   }
   return context;
-}; 
+};

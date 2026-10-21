@@ -1,42 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { Home, LogOut, User } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import ThemeToggle from '../ThemeToggle';
-import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { getInitials } from '../../lib/profileService';
-import { Sidebar } from './Sidebar';
-import { Menu, ChevronLeft, Moon, Sun, Home, User, LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import ThemeToggle from '../ThemeToggle';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Sidebar } from './Sidebar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { user, signOut, userRole } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [isMobile, setIsMobile] = useState(false);
   const [showMobileHeader, setShowMobileHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  
-  // Check if device is mobile
-  useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    
-    // Initial check
-    checkIfMobile();
-    
-    // Add event listener for window resize
-    window.addEventListener('resize', checkIfMobile);
-    
-    // Cleanup
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
   
   // Handle scroll for hiding/showing header on mobile
   useEffect(() => {
@@ -175,4 +155,4 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
     </div>
   );
-} 
+}

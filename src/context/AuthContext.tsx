@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '../supabase';
-import { ExtendedUser, AppUser } from '../types/user';
-import { ProfileUpdateData, updateUserProfile, getUserProfile, profileCache, UserProfile } from '../lib/profileService';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { getUserProfile, profileCache, ProfileUpdateData, updateUserProfile } from '../lib/profileService';
+import { supabase } from '../supabase';
+import { AppUser, ExtendedUser } from '../types/user';
 
 // Moved createUserProfile outside the component for stability
 const createUserProfile = async (userId: string, role: UserRole = 'user') => {
@@ -27,17 +27,6 @@ const createUserProfile = async (userId: string, role: UserRole = 'user') => {
 
 export type UserRole = 'user' | 'admin';
 
-type Profile = {
-  id: string;
-  user_id: string;
-  role: UserRole;
-  streak?: number;
-  membershipType?: string;
-  name?: string;
-  profile_image?: string;
-  created_at?: string;
-  updated_at?: string;
-};
 
 type AuthContextType = {
   session: Session | null;
@@ -231,7 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -314,8 +303,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const userId = user?.id;
   const deleteAccount = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       toast.error('You must be logged in to delete your account');
       return { error: new Error('User not authenticated') };
     }
@@ -327,7 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
-        .eq('id', user.id);
+        .eq('id', userId);
         
       if (profileError) {
         toast.dismiss(loadingToast);
@@ -352,7 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error deleting account:', error);
       return { error };
     }
-  }, [user?.id]);
+  }, [userId]);
 
   const value = useMemo(() => ({
     session,
@@ -389,4 +379,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

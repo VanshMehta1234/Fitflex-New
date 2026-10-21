@@ -1,5 +1,4 @@
 import { addXpToUser } from './xpService';
-import { XpSource } from '../types/xp';
 
 // Constants for XP reward amounts
 export const XP_REWARDS = {
@@ -262,4 +261,4 @@ export const awardCustomAchievementXp = async (
     console.error('Error awarding custom achievement XP:', error);
     return false;
   }
-}; 
+};

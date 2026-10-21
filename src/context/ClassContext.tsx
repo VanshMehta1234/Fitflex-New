@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Class, ClassBooking, getAllClasses, getClassesWithAvailability, getClassById, createClass, updateClass, deleteClass, bookClass, cancelBooking, getUserBookings } from "../lib/classService";
-import { useAuth } from "./AuthContext";
+import { useCallback, createContext, ReactNode, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { bookClass, cancelBooking, Class, ClassBooking, createClass, deleteClass, getClassesWithAvailability, getUserBookings, updateClass } from "../lib/classService";
+import { useAuth } from "./AuthContext";
 
 type ClassContextType = {
   classes: Class[];
@@ -28,19 +28,12 @@ export function ClassProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const userId = user?.id;
+
   // Load classes on mount
   useEffect(() => {
     refreshClasses();
   }, []);
-
-  // Load user bookings when user changes
-  useEffect(() => {
-    if (user) {
-      refreshUserBookings();
-    } else {
-      setUserBookings([]);
-    }
-  }, [user]);
 
   // Refresh classes
   const refreshClasses = async () => {
@@ -66,12 +59,12 @@ export function ClassProvider({ children }: { children: ReactNode }) {
   };
 
   // Refresh user bookings
-  const refreshUserBookings = async () => {
-    if (!user) return;
+  const refreshUserBookings = useCallback(async () => {
+    if (!userId) return;
     
     setIsLoading(true);
     try {
-      const bookings = await getUserBookings(user.id);
+      const bookings = await getUserBookings(userId);
       setUserBookings(bookings);
       setError(null);
     } catch (err) {
@@ -81,7 +74,16 @@ export function ClassProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Load user bookings when user changes
+  useEffect(() => {
+    if (userId) {
+      refreshUserBookings();
+    } else {
+      setUserBookings([]);
+    }
+  }, [userId, refreshUserBookings]);
 
   // Create a new class
   const createNewClass = async (classData: Omit<Class, 'id' | 'created_at' | 'updated_at'>) => {
@@ -205,4 +207,4 @@ export function useClasses() {
     throw new Error("useClasses must be used within a ClassProvider");
   }
   return context;
-} 
+}

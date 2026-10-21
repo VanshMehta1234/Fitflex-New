@@ -1,31 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useXp } from '../context/XpContext';
-import { useFeedback } from '../context/FeedbackContext';
-import { MainLayout } from '../components/Layout/MainLayout';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DailyChallenges, XpEarningGuide } from '../components/DailyChallenges';
 import { PageContainer } from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { MainLayout } from '../components/Layout/MainLayout';
 import { Button } from '../components/ui/button';
-import { Progress } from '../components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { DailyQuoteCard } from '../components/ui/DailyQuoteCard';
 import { FitnessTipCard } from '../components/ui/FitnessTipCard';
-import { DailyChallenges, XpEarningGuide } from '../components/DailyChallenges';
-import { LEVEL_XP_REQUIREMENTS } from '../lib/xpService';
-import { useNavigate } from 'react-router-dom';
+import { Progress } from '../components/ui/progress';
+import { useAuth } from '../context/AuthContext';
+import { useFeedback } from '../context/FeedbackContext';
+import { useXp } from '../context/XpContext';
 
 // Icons
-import { 
-  Flame, 
-  User, 
-  Settings, 
-  CreditCard, 
-  ArrowUp,
-  Trophy,
-  MessageSquare,
-  BarChart,
-  Calendar,
-  ChevronRight
-} from 'lucide-react';
+// Icons
+import { Calendar, CreditCard, Flame, MessageSquare, Settings, Trophy, User } from 'lucide-react';
 
 // Enhanced Home page with engagement features
 export default function Home() {
@@ -259,4 +248,4 @@ export default function Home() {
       </PageContainer>
     </MainLayout>
   );
-} 
+}

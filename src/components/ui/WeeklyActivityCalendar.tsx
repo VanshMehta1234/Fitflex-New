@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { cn } from '../../lib/utils';
 import { useXp } from '../../context/XpContext';
@@ -28,7 +28,7 @@ const generateCalendarDays = () => {
 export function WeeklyActivityCalendar({ className, ...props }: WeeklyActivityCalendarProps) {
   const { userXp } = useXp();
   const [activityDays, setActivityDays] = useState<Record<string, number>>({});
-  const calendarDays = generateCalendarDays();
+  const calendarDays = useMemo(generateCalendarDays, []);
   
   // Generate random activity data based on user XP
   // In a real app, this would come from a database
@@ -48,7 +48,7 @@ export function WeeklyActivityCalendar({ className, ...props }: WeeklyActivityCa
     });
     
     setActivityDays(mockData);
-  }, [userXp]);
+  }, [userXp, calendarDays]);
   
   // Get activity level for rendering the heatmap
   const getActivityLevel = (dateString: string) => {
@@ -134,4 +134,4 @@ export function WeeklyActivityCalendar({ className, ...props }: WeeklyActivityCa
       </CardContent>
     </Card>
   );
-} 
+}

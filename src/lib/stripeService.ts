@@ -222,27 +222,22 @@ export const stripeService = {
    * Get customer payment methods
    */
   async getPaymentMethods(customerId: string): Promise<any> {
-    try {
-      // In a real implementation, this would call a backend endpoint
-      // For now, return mock data
-      return {
-        data: [
-          {
-            id: 'pm_mock_card',
-            type: 'card',
-            card: {
-              brand: 'visa',
-              last4: '4242',
-              exp_month: 12,
-              exp_year: 2025
-            }
+    // In a real implementation, this would call a backend endpoint
+    // For now, return mock data
+    return {
+      data: [
+        {
+          id: 'pm_mock_card',
+          type: 'card',
+          card: {
+            brand: 'visa',
+            last4: '4242',
+            exp_month: 12,
+            exp_year: 2025
           }
-        ]
-      };
-    } catch (error) {
-      console.error('Error getting payment methods:', error);
-      throw error;
-    }
+        }
+      ]
+    };
   },
 
   /**
@@ -278,4 +273,4 @@ export const stripeService = {
       throw error;
     }
   },
-}; 
+};

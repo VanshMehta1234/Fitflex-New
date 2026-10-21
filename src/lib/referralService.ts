@@ -1,8 +1,7 @@
-import { supabase } from '../supabase';
 import { nanoid } from 'nanoid';
-import { addXpToUser } from './xpService';
-import { XpSource } from '../types/xp';
+import { supabase } from '../supabase';
 import { awardReferralSentXp, awardReferralSignupXp } from './xpRewardsService';
+import { addXpToUser } from './xpService';
 
 // Define Referral and ReferralRedemption types
 export interface Referral {
@@ -440,4 +439,4 @@ export const getReferralRedemptions = async (userId: string): Promise<ReferralRe
     console.error('Error in getReferralRedemptions:', error);
     return [];
   }
-}; 
+};

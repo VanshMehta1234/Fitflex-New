@@ -121,7 +121,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         sessionStorage.removeItem(adminDataCacheKey);
       }
     }
-  }, [user?.id, userRole]); // Only re-run when user ID or role changes, not on every render
+  }, [user, userRole, adminFeedbackForms.length, isAdminLoading]);
 
   // Load user's feedback forms
   useEffect(() => {
@@ -163,55 +163,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
     }
 
     loadFeedbackForms();
-  }, [user?.id]); // Only depend on user ID, not the entire user object
-
-  // Auto-refresh admin data periodically if the user is an admin
-  useEffect(() => {
-    // Clear any existing timer
-    if (autoRefreshTimerRef.current) {
-      clearInterval(autoRefreshTimerRef.current);
-      autoRefreshTimerRef.current = null;
-    }
-    
-    // Only set up auto-refresh if user is logged in and is admin
-    if (user && userRole === 'admin') {
-      console.log("FeedbackContext - Setting up auto-refresh timer");
-      
-      // Perform initial load if needed with debounce to prevent load spike on mount
-      if (!initialLoadCompletedRef.current && adminFeedbackForms.length === 0 && !isFetchingAdminData.current) {
-        console.log("FeedbackContext - Scheduling initial load with debounce");
-        const debounceTimer = setTimeout(() => {
-          if (adminFeedbackForms.length === 0 && !isFetchingAdminData.current) {
-            console.log("FeedbackContext - Executing debounced initial load");
-            loadAdminFeedback(true).catch(err => {
-              console.error("Initial admin data load failed:", err);
-            });
-          }
-          initialLoadCompletedRef.current = true;
-        }, 1000); // 1 second debounce delay
-        
-        // Cleanup the debounce timer
-        return () => clearTimeout(debounceTimer);
-      }
-      
-      // Refresh every 10 minutes (600000ms)
-      autoRefreshTimerRef.current = window.setInterval(() => {
-        console.log("FeedbackContext - Auto-refresh triggered");
-        loadAdminFeedback(false).catch(err => {
-          console.error("Auto-refresh failed:", err);
-        });
-      }, 600000); // 10 minutes
-    }
-    
-    // Clean up on unmount or when dependencies change
-    return () => {
-      if (autoRefreshTimerRef.current) {
-        console.log("FeedbackContext - Clearing auto-refresh timer");
-        clearInterval(autoRefreshTimerRef.current);
-        autoRefreshTimerRef.current = null;
-      }
-    };
-  }, [user?.id, userRole]); // Only depend on user ID and role
+  }, [user]);
 
   // Helper function to batch array into chunks
   function chunkArray<T>(array: T[], chunkSize: number): T[][] {
@@ -420,7 +372,57 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       setIsAdminLoading(false);
       isFetchingAdminData.current = false;
     }
-  }, [user, userRole]);
+  }, [user, userRole, adminFeedbackForms.length]);
+
+  // Auto-refresh admin data periodically if the user is an admin
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoRefreshTimerRef.current) {
+      clearInterval(autoRefreshTimerRef.current);
+      autoRefreshTimerRef.current = null;
+    }
+
+    // Only set up auto-refresh if user is logged in and is admin
+    if (user && userRole === 'admin') {
+      console.log("FeedbackContext - Setting up auto-refresh timer");
+
+      // Perform initial load if needed with debounce to prevent load spike on mount
+      if (!initialLoadCompletedRef.current && adminFeedbackForms.length === 0 && !isFetchingAdminData.current) {
+        console.log("FeedbackContext - Scheduling initial load with debounce");
+        const debounceTimer = setTimeout(() => {
+          if (adminFeedbackForms.length === 0 && !isFetchingAdminData.current) {
+            console.log("FeedbackContext - Executing debounced initial load");
+            loadAdminFeedback(true).catch(err => {
+              console.error("Initial admin data load failed:", err);
+            });
+          }
+          initialLoadCompletedRef.current = true;
+        }, 1000); // 1 second debounce delay
+
+        // Cleanup the debounce timer
+        return () => clearTimeout(debounceTimer);
+      }
+
+      // Refresh every 10 minutes (600000ms)
+      autoRefreshTimerRef.current = window.setInterval(() => {
+        console.log("FeedbackContext - Auto-refresh triggered");
+        loadAdminFeedback(false).catch(err => {
+          console.error("Auto-refresh failed:", err);
+        });
+      }, 600000); // 10 minutes
+    }
+
+    // Clean up on unmount or when dependencies change
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        console.log("FeedbackContext - Clearing auto-refresh timer");
+        clearInterval(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    };
+  }, [user, userRole, adminFeedbackForms.length, loadAdminFeedback]);
+
+
 
   // Submit weekly feedback
   const submitWeeklyFeedback = useCallback(async (feedbackData: WeeklyFeedbackData): Promise<FeedbackForm | null> => {
@@ -520,4 +522,4 @@ export function useFeedback() {
   });
   
   return context;
-} 
+}

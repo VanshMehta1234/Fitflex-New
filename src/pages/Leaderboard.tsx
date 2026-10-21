@@ -1,24 +1,13 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { Award, Calendar, ChevronLeft, ChevronRight, Clock, Medal, RotateCw, Star, Trophy } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '../components/Layout/MainLayout';
-import { useLeaderboard } from '../context/LeaderboardContext';
-import { useAuth } from '../context/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import {
-  Trophy,
-  Medal,
-  Award,
-  Calendar,
-  User,
-  Clock,
-  RotateCw,
-  Star,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
-import { Skeleton } from '../components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Skeleton } from '../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { useAuth } from '../context/AuthContext';
+import { useLeaderboard } from '../context/LeaderboardContext';
 import { getInitials } from '../lib/profileService';
 
 // Helper function to get rank display icon
@@ -335,4 +324,4 @@ export default function Leaderboard() {
       </div>
     </MainLayout>
   );
-} 
+}

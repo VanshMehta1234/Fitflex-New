@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import { StoreItem, StorePurchase, UserInventory, StoreCategory, StoreStats } from '../types/store';
+import { StoreCategory, StoreItem, StorePurchase, StoreStats, UserInventory } from '../types/store';
 import { getUserTotalXp } from './xpService';
 
 // Cache for store items to prevent unnecessary API calls
@@ -11,7 +11,6 @@ let storeItemsCache: StoreItem[] | null = null;
  * Get all active store items with caching
  */
 export const getStoreItems = async (forceRefresh: boolean = false): Promise<StoreItem[]> => {
-  const now = Date.now();
   
 //   // Return cached data if it's still valid and we're not forcing refresh
 //   if (!forceRefresh && storeItemsCache && (now - cacheTimestamp) < CACHE_DURATION) {
@@ -112,7 +111,7 @@ export const purchaseStoreItem = async (
     }
     
     // Start transaction
-    const { data: purchaseData, error: purchaseError } = await supabase.rpc('purchase_store_item', {
+    const { error: purchaseError } = await supabase.rpc('purchase_store_item', {
       p_user_id: userId,
       p_item_id: itemId,
       p_quantity: quantity,
@@ -366,4 +365,4 @@ export const getAllPurchasesAdmin = async (): Promise<StorePurchase[]> => {
 export const clearStoreCache = (): void => {
   storeItemsCache = null;
   // cacheTimestamp = 0;
-}; 
+};
