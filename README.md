@@ -28,20 +28,13 @@ Actual application screens captured locally with fictional member, XP, and class
 
 XP progress, level milestones, daily challenges, and shortcuts to member features.
 
-![FitFlex member dashboard with XP level, progress bar, weekly feedback, and daily challenges](https://github.com/user-attachments/assets/197cf85b-a21e-4664-8a58-216407653de8)
+![FitFlex member dashboard with XP level, progress bar, weekly feedback, and daily challenges](docs/screenshots/dashboard.jpg)
 
 ### Fitness classes
 
 Searchable class listings with type and level filters, schedules, locations, capacity, and booking controls.
 
-![FitFlex class listing with filters, instructor details, schedules, capacity, and booking buttons](https://github.com/user-attachments/assets/c9a85b9b-19d7-4673-b074-4a21677422fc)
-
-<details>
-<summary><strong>View public sign-in screen</strong></summary>
-
-![FitFlex public sign-in screen](https://github.com/user-attachments/assets/69650329-7ba6-4fc4-b700-a5798fbd265d)
-
-</details>
+![FitFlex class listing with filters, instructor details, schedules, capacity, and booking buttons](docs/screenshots/classes.jpg)
 
 ## Product areas
 
