@@ -20,11 +20,28 @@ FitFlex brings everyday fitness-community workflows into a member-facing applica
 
 **Repository scope:** this public version is a **React/Create React App application**, not a Next.js app. It connects directly to Supabase. Membership and payment screens include demonstration behavior; this repository does not include a complete production billing backend.
 
-## Screenshot
+## Screenshots
 
-Public sign-in screen of the hosted application. Member and admin areas require an account.
+Actual application screens captured locally with fictional member, XP, and class records. Backend responses are simulated for this demo.
 
-![FitFlex sign-in interface with email, password, and account-recovery links](https://github.com/user-attachments/assets/69650329-7ba6-4fc4-b700-a5798fbd265d)
+### Member dashboard
+
+XP progress, level milestones, daily challenges, and shortcuts to member features.
+
+![FitFlex member dashboard with XP level, progress bar, weekly feedback, and daily challenges](https://github.com/user-attachments/assets/197cf85b-a21e-4664-8a58-216407653de8)
+
+### Fitness classes
+
+Searchable class listings with type and level filters, schedules, locations, capacity, and booking controls.
+
+![FitFlex class listing with filters, instructor details, schedules, capacity, and booking buttons](https://github.com/user-attachments/assets/c9a85b9b-19d7-4673-b074-4a21677422fc)
+
+<details>
+<summary><strong>View public sign-in screen</strong></summary>
+
+![FitFlex public sign-in screen](https://github.com/user-attachments/assets/69650329-7ba6-4fc4-b700-a5798fbd265d)
+
+</details>
 
 ## Product areas
 
