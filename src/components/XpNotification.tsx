@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Star, Award, ChevronUp } from 'lucide-react';
+import { ChevronUp, Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 
 interface XpNotificationProps {
@@ -111,4 +111,4 @@ export const XpNotificationManager: React.FC<XpNotificationManagerProps> = ({ ch
       )}
     </>
   );
-}; 
+};

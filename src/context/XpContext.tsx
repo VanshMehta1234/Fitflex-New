@@ -75,7 +75,7 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, refreshUserProfile, setUserXp, setUserLevel, setXpTransactions, calculateLevel]);
+  }, [user?.id, refreshUserProfile, setUserXp, setUserLevel, setXpTransactions]);
   
   // Fetch user's XP data from database on mount and when user changes
   useEffect(() => {
@@ -116,7 +116,7 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, userLevel, calculateLevel, awardLevelMilestoneXp, getUserTotalXp, setUserXp, setUserLevel]);
+  }, [user?.id, userLevel, setUserXp, setUserLevel]);
   
   // Calculate progress information
   const calculateProgress = useCallback(() => {
@@ -165,7 +165,7 @@ export function XpProvider({ children }: XpProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, addXpToUser, fetchXpData]);
+  }, [user?.id, fetchXpData]);
 
   // Refresh XP data
   const refreshXpData = useCallback(async (): Promise<void> => {
@@ -192,4 +192,4 @@ export const useXp = () => {
     throw new Error('useXp must be used within an XpProvider');
   }
   return context;
-}; 
+};

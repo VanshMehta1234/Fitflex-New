@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabase';
-import '../styles/Admin.css';
 import { getAllProfilesWithCache, invalidateAllProfilesCache } from '../lib/adminService';
+import '../styles/Admin.css';
+import { supabase } from '../supabase';
 
 type Profile = {
   id: string;
@@ -14,7 +14,7 @@ type Profile = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const { user, signOut, userRole } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,4 +152,4 @@ const AdminDashboard: React.FC = () => {
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

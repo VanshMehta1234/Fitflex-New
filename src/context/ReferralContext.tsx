@@ -2,15 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useRef, useC
 import toast from "react-hot-toast";
 import { useAuth } from "./AuthContext";
 import { useXp } from "./XpContext";
-import {
-  Referral,
-  ReferralRedemption,
-  createReferral,
-  getUserReferrals,
-  redeemReferralCode,
-  getReferralRedemptions,
-  getStoredReferralCode
-} from "../lib/referralService";
+import { Referral, ReferralRedemption, createReferral, getUserReferrals, redeemReferralCode, getReferralRedemptions, getStoredReferralCode } from "../lib/referralService";
 
 // Context type
 type ReferralContextType = {
@@ -154,69 +146,12 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Load referral data on mount or when user changes
-  useEffect(() => {
-    // Skip if no user
-    if (!user) {
-      console.log("No user, skipping initial fetch");
-      return;
-    }
-    
-    // Skip if we already fetched for this user
-    if (initialFetchedForUserRef.current === user.id) {
-      console.log(`Already fetched initial data for user ${user.id}, skipping duplicate fetch`);
-      return;
-    }
-    
-    console.log("User ID changed or first load, fetching referral data", { 
-      userId: user?.id,
-      previousUserId: initialFetchedForUserRef.current 
-    });
-    
-    // Skip initial fetch if there's already an operation in progress
-    if (isLoading && currentOperationRef.current) {
-      console.log(`Skipping initial fetch because ${currentOperationRef.current} is in progress`);
-      return;
-    }
-    
-    // Mark that we've fetched for this user ID
-    initialFetchedForUserRef.current = user.id;
-    
-    // Initial data fetch doesn't need full operation tracking
-    const fetchInitialData = async () => {
-      try {
-        // Set loading but don't track as a named operation
-        if (!isLoading) {
-          setIsLoading(true);
-        }
-        
-        // Create a timeout for this specific fetch
-        const fetchTimeout = setTimeout(() => {
-          console.warn("Initial data fetch timed out");
-          setIsLoading(false);
-        }, 10000);
-        
-        // Fetch the data
-        await fetchReferralData();
-        
-        // Clear timeout and loading state
-        clearTimeout(fetchTimeout);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error in initial data fetch:", error);
-        setIsLoading(false);
-      }
-    };
-    
-    // Execute the fetch
-    fetchInitialData();
-    
-  }, [user?.id]);
+  const userId = user?.id;
 
   // Fetch user's referrals and redemptions
-  const fetchReferralData = async () => {
-    console.log("fetchReferralData started", { userId: user?.id });
-    if (!user) {
+  const fetchReferralData = useCallback(async () => {
+    console.log("fetchReferralData started", { userId: userId });
+    if (!userId) {
       console.log("No user found, clearing referral data");
       setReferrals([]);
       setActiveReferral(null);
@@ -225,7 +160,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log("Fetching user referrals for:", user.id);
+      console.log("Fetching user referrals for:", userId);
       
       // Fetch user's referrals with timeout safety
       const referralsPromise = new Promise<Referral[]>(async (resolve, reject) => {
@@ -234,7 +169,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
             reject(new Error("Referral fetch timed out"));
           }, 8000);
           
-          const referrals = await getUserReferrals(user.id);
+          const referrals = await getUserReferrals(userId);
           clearTimeout(timeoutId);
           resolve(referrals);
         } catch (error) {
@@ -259,13 +194,13 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error fetching referrals:", error);
         // Try to use localStorage as fallback for referral code
-        const storedReferral = getStoredReferralCode(user.id);
+        const storedReferral = getStoredReferralCode(userId);
         if (storedReferral) {
           console.log("Using stored referral from localStorage:", storedReferral);
           // We don't have full referral object, so we'll set a minimal one
           setActiveReferral({
             id: storedReferral.id,
-            referrer_id: user.id,
+            referrer_id: userId,
             referral_code: storedReferral.code,
             created_at: new Date().toISOString(),
             uses_count: 0,
@@ -282,7 +217,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
       if (userReferrals.length > 0) {
         try {
           console.log("Fetching referral redemptions");
-          const redemptions = await getReferralRedemptions(user.id);
+          const redemptions = await getReferralRedemptions(userId);
           console.log(`Fetched ${redemptions.length} redemptions`);
           setReferralRedemptions(redemptions);
         } catch (error) {
@@ -298,7 +233,64 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
       setActiveReferral(null);
       setReferralRedemptions([]);
     }
-  };
+  }, [userId]);
+
+  // Load referral data on mount or when user changes
+  useEffect(() => {
+    // Skip if no user
+    if (!userId) {
+      console.log("No user, skipping initial fetch");
+      return;
+    }
+
+    // Skip if we already fetched for this user
+    if (initialFetchedForUserRef.current === userId) {
+      console.log(`Already fetched initial data for user ${userId}, skipping duplicate fetch`);
+      return;
+    }
+
+    console.log("User ID changed or first load, fetching referral data", {
+      userId: userId,
+      previousUserId: initialFetchedForUserRef.current
+    });
+
+    // Skip initial fetch if there's already an operation in progress
+    if (isLoading && currentOperationRef.current) {
+      console.log(`Skipping initial fetch because ${currentOperationRef.current} is in progress`);
+      return;
+    }
+
+    // Mark that we've fetched for this user ID
+    initialFetchedForUserRef.current = userId;
+
+    // Initial data fetch doesn't need full operation tracking
+    const fetchInitialData = async () => {
+      try {
+        // Set loading but don't track as a named operation
+        setIsLoading(true);
+
+        // Create a timeout for this specific fetch
+        const fetchTimeout = setTimeout(() => {
+          console.warn("Initial data fetch timed out");
+          setIsLoading(false);
+        }, 10000);
+
+        // Fetch the data
+        await fetchReferralData();
+
+        // Clear timeout and loading state
+        clearTimeout(fetchTimeout);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error in initial data fetch:", error);
+        setIsLoading(false);
+      }
+    };
+
+    // Execute the fetch
+    fetchInitialData();
+
+  }, [userId, fetchReferralData, isLoading]);
 
   // Redeem a referral code
   const redeemCode = async (code: string): Promise<boolean> => {
@@ -454,4 +446,4 @@ export function useReferral() {
     throw new Error("useReferral must be used within a ReferralProvider");
   }
   return context;
-} 
+}

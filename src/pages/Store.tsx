@@ -1,25 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import { History, Package, RefreshCw, Search, ShoppingBag, Star, Trophy } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { PageContainer, PageHeader } from '../components/Layout';
 import { MainLayout } from '../components/Layout/MainLayout';
-import { PageHeader, PageContainer } from '../components/Layout';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Skeleton } from '../components/ui/skeleton';
+import { StoreCategoryFilter } from '../components/ui/StoreCategoryFilter';
+import { StoreItemCard } from '../components/ui/StoreItemCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useStore } from '../context/StoreContext';
 import { useXp } from '../context/XpContext';
-import { StoreItemCard } from '../components/ui/StoreItemCard';
-import { StoreCategoryFilter } from '../components/ui/StoreCategoryFilter';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Skeleton } from '../components/ui/skeleton';
-import { Input } from '../components/ui/input';
-import { 
-  ShoppingBag, 
-  Star, 
-  Search, 
-  Package, 
-  RefreshCw, 
-  History,
-  Trophy
-} from 'lucide-react';
 
 export default function Store() {
   const { userXp, userLevel } = useXp();
@@ -28,7 +20,6 @@ export default function Store() {
     filteredItems,
     isLoadingItems,
     userPurchases,
-    userInventory,
     isLoadingUserData,
     categories,
     selectedCategory,
@@ -278,4 +269,4 @@ export default function Store() {
       </PageContainer>
     </MainLayout>
   );
-} 
+}

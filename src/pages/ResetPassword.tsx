@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import ThemeToggle from '../components/ThemeToggle';
+import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import ThemeToggle from '../components/ThemeToggle';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase';
 
 const ResetPassword: React.FC = () => {
@@ -44,7 +44,6 @@ const ResetPassword: React.FC = () => {
       // Parse the hash fragment
       const params = new URLSearchParams(hash.substring(1));
       const token = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
       const type = params.get('type');
       
       // Check query parameters too
@@ -475,4 +474,4 @@ const ResetPassword: React.FC = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;

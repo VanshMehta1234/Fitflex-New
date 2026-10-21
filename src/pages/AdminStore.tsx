@@ -1,44 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MainLayout } from '../components/Layout/MainLayout';
-import { PageHeader, PageContainer } from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Switch } from '../components/ui/switch';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Label } from '../components/ui/label';
-import { Skeleton } from '../components/ui/skeleton';
-import { 
-  getAllStoreItemsAdmin, 
-  createStoreItem, 
-  updateStoreItem, 
-  deleteStoreItem,
-  getStoreStats,
-  getAllPurchasesAdmin
-} from '../lib/storeService';
-import { StoreItem, StoreCategory, StoreStats, StorePurchase } from '../types/store';
-import { 
-  Package, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  RefreshCw,
-  ShoppingBag,
-  BarChart3,
-  Users,
-  Star,
-  TrendingUp,
-  Sparkles,
-  Eye,
-  EyeOff,
-  AlertTriangle
-} from 'lucide-react';
+import { AlertTriangle, BarChart3, Edit, Eye, EyeOff, Package, Plus, RefreshCw, Save, ShoppingBag, Star, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { PageContainer, PageHeader } from '../components/Layout';
+import { MainLayout } from '../components/Layout/MainLayout';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Skeleton } from '../components/ui/skeleton';
+import { Switch } from '../components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Textarea } from '../components/ui/textarea';
+import { createStoreItem, deleteStoreItem, getAllPurchasesAdmin, getAllStoreItemsAdmin, getStoreStats, updateStoreItem } from '../lib/storeService';
+import { StoreCategory, StoreItem, StorePurchase, StoreStats } from '../types/store';
 
 interface ItemFormData {
   name: string;
@@ -634,4 +611,4 @@ export default function AdminStore() {
       </PageContainer>
     </MainLayout>
   );
-} 
+}

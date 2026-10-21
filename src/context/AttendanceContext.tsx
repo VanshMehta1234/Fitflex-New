@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useCallback, createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { attendanceService } from "../lib/attendanceService";
 import toast from "react-hot-toast";
@@ -23,8 +23,9 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
   const [longestStreak, setLongestStreak] = useState(0);
   const { user } = useAuth();
 
-  const checkStatus = async () => {
-    if (!user) {
+  const userId = user?.id;
+  const checkStatus = useCallback(async () => {
+    if (!userId) {
       // This case should ideally be handled by the useEffect not calling checkStatus,
       // but as a safeguard or for direct calls to refreshAttendance when logged out:
       setCheckedIn(false);
@@ -37,7 +38,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     
     setLoading(true); // Set loading true when we are about to fetch
     try {
-      const todayCheckIn = await attendanceService.getTodayCheckIn(user.id);
+      const todayCheckIn = await attendanceService.getTodayCheckIn(userId);
       setCheckedIn(!!todayCheckIn);
       if (todayCheckIn) {
         setLastCheckIn(todayCheckIn.check_in_time);
@@ -50,10 +51,10 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
   useEffect(() => {
-    if (user?.id) {
+    if (userId) {
       checkStatus();
     } else {
       // User is not logged in or user object is cleared
@@ -63,7 +64,7 @@ export function AttendanceProvider({ children }: { children: ReactNode }) {
       setLongestStreak(0);
       setLoading(false); // Ensure loading is false if no user
     }
-  }, [user?.id]); // Depend on user.id for stability
+  }, [userId, checkStatus]);
 
   const handleCheckIn = async () => {
     if (!user) {
@@ -138,4 +139,4 @@ export function useAttendance() {
     throw new Error("useAttendance must be used within an AttendanceProvider");
   }
   return context;
-} 
+}

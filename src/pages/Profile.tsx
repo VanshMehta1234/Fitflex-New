@@ -1,35 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { Award, Camera, CheckCircle, ChevronLeft, Clock, Loader2, LogOut, Mail, Shield, Trophy, User } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/Layout/MainLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Form, FormControl, FormDescription, FormItem, FormLabel } from '../components/ui/form';
 import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
-import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { uploadProfileImage, getInitials } from '../lib/profileService';
 import { useAuth } from '../context/AuthContext';
 import { useXp } from '../context/XpContext';
-import toast from 'react-hot-toast';
-import {
-  Camera,
-  User,
-  Phone,
-  MapPin,
-  Globe,
-  Calendar,
-  CheckCircle,
-  Loader2,
-  Mail,
-  Award,
-  Shield,
-  Trophy,
-  Clock,
-  ChevronLeft,
-  LogOut
-} from 'lucide-react';
+import { getInitials, uploadProfileImage } from '../lib/profileService';
 
 export default function Profile() {
   const { user, updateProfile, userRole, signOut } = useAuth();
@@ -731,4 +713,4 @@ export default function Profile() {
       </div>
     </MainLayout>
   );
-} 
+}

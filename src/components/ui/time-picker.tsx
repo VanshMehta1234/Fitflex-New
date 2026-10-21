@@ -2,11 +2,7 @@ import * as React from "react";
 import { Clock } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "./popover";
+import { Popover, PopoverContent, PopoverTrigger, } from "./popover";
 import { Input } from "./input";
 import { Label } from "./label";
 
@@ -41,7 +37,7 @@ export function TimePicker({
   };
 
   // Convert to 12-hour format for editing
-  const get12HourValues = () => {
+  const get12HourValues = React.useCallback(() => {
     try {
       const [hours, minutes] = time.split(":");
       const hour24 = parseInt(hours, 10);
@@ -55,7 +51,7 @@ export function TimePicker({
     } catch (e) {
       return { hour: "12", minute: "00", period: "AM" };
     }
-  };
+  }, [time]);
 
   const { hour, minute, period } = get12HourValues();
   const [currentHour, setCurrentHour] = React.useState(hour);
@@ -70,7 +66,7 @@ export function TimePicker({
       setCurrentMinute(minute);
       setCurrentPeriod(period);
     }
-  }, [time]);
+  }, [time, get12HourValues]);
 
   // Apply time changes
   const applyTimeChanges = (hour: string, minute: string, period: string) => {
@@ -192,4 +188,4 @@ export function TimePicker({
       </PopoverContent>
     </Popover>
   );
-} 
+}

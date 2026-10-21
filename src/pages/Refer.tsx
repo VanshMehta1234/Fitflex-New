@@ -1,44 +1,19 @@
-import { useState, useEffect } from "react";
+import { format, parseISO } from "date-fns";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { PageContainer, PageHeader } from "../components/Layout";
 import { MainLayout } from "../components/Layout/MainLayout";
-import { PageHeader, PageContainer } from "../components/Layout";
-import { useAuth } from "../context/AuthContext";
 import { useReferral } from "../context/ReferralContext";
 import { useXp } from "../context/XpContext";
-import { format, parseISO } from "date-fns";
-import toast from "react-hot-toast";
 
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "../components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "../components/ui/dialog";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
+import { AlertCircle, CheckCircle, Copy, Gift, Share2, Sparkles, Users } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
 import { Skeleton } from "../components/ui/skeleton";
-import { 
-  Users, 
-  Share2, 
-  Copy, 
-  CheckCircle, 
-  Sparkles, 
-  ChevronRight, 
-  Gift, 
-  Clock, 
-  AlertCircle 
-} from "lucide-react";
 import { supabase } from "../supabase";
 
 export default function Refer() {
@@ -50,10 +25,8 @@ export default function Refer() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const { user } = useAuth();
   const { 
     activeReferral, 
-    referrals, 
     referralRedemptions, 
     isLoading: referralLoading, 
     hasReferral,
@@ -64,14 +37,17 @@ export default function Refer() {
   
   const { 
     userXp, 
-    userLevel, 
     xpTransactions, 
     refreshXpData,
     isLoading: xpLoading
   } = useXp();
 
+  const hasRefreshed = useRef(false);
+
   // Refresh data when component mounts
   useEffect(() => {
+    if (hasRefreshed.current) return;
+    hasRefreshed.current = true;
     const loadData = async () => {
       setIsRefreshing(true);
       try {
@@ -87,7 +63,7 @@ export default function Refer() {
     };
     
     loadData();
-  }, []);
+  }, [refreshReferrals, refreshXpData]);
 
   // Fetch profile information for redeemers
   useEffect(() => {
@@ -125,9 +101,6 @@ export default function Refer() {
 
   // Get referral code and link
   const referralCode = activeReferral?.referral_code || "";
-  const referralLink = activeReferral 
-    ? `https://fitflex.com/join?ref=${activeReferral.referral_code}`
-    : "";
 
   // Handle refreshing data
   const handleRefresh = async () => {
@@ -516,4 +489,4 @@ export default function Refer() {
       </Dialog>
     </MainLayout>
   );
-} 
+}

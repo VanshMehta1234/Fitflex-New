@@ -1,30 +1,11 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { CalendarCheck, ChevronRight, CreditCard, Dumbbell, Gift, Home, LogOut, Menu, Package, Settings, Share2, Star, Trophy, User, X } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Button } from '../ui/button';
-import { 
-  Home, 
-  User, 
-  Calendar, 
-  CreditCard, 
-  BarChart, 
-  Settings, 
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
-  CalendarCheck,
-  Dumbbell,
-  Share2,
-  Gift,
-  Trophy,
-  Star,
-  Package
-} from 'lucide-react';
-import { cn } from '../../lib/utils';
 import { getInitials } from '../../lib/profileService';
+import { cn } from '../../lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Button } from '../ui/button';
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -32,7 +13,6 @@ interface SidebarProps {
 
 export function Sidebar({ isMobile = false }: SidebarProps) {
   const { user, userRole, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(!isMobile);
@@ -251,4 +231,4 @@ export function Sidebar({ isMobile = false }: SidebarProps) {
       </aside>
     </>
   );
-} 
+}

@@ -1,33 +1,27 @@
 // Import the admin styles
+// Import the admin styles
 import "../styles/Admin.css";
 
-import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useClasses } from "../context/ClassContext";
-import { Class, getClassBookings, ClassBooking, createClasses } from "../lib/classService";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent } from "../components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Badge } from "../components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
-import { Label } from "../components/ui/label";
-import { Textarea } from "../components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import {
-  Calendar as CalendarIcon,
-  Edit,
-  Trash,
-  Plus,
-  Search,
-  Users
-} from "lucide-react";
-import { format, parseISO, isBefore, startOfDay, addYears, eachDayOfInterval, startOfMonth, endOfMonth, addMonths, getDay } from "date-fns";
+import { addMonths, addYears, eachDayOfInterval, endOfMonth, format, getDay, parseISO } from "date-fns";
+import { Calendar as CalendarIcon, Edit, Plus, Search, Trash, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { MainLayout } from "../components/Layout/MainLayout";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 import { DatePicker } from "../components/ui/date-picker";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { Textarea } from "../components/ui/textarea";
 import { TimePicker } from "../components/ui/time-picker";
+import { useAuth } from "../context/AuthContext";
+import { useClasses } from "../context/ClassContext";
+import { Class, createClasses } from "../lib/classService";
 
 export default function AdminClasses() {
   const { user, userRole } = useAuth();
@@ -1104,4 +1098,4 @@ export default function AdminClasses() {
       </div>
     </MainLayout>
   );
-} 
+}

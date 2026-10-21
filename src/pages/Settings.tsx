@@ -1,41 +1,16 @@
+import { AlertTriangle, Bell, CheckCircle, Eye, HelpCircle, Lock, Moon, Settings as SettingsIcon, Sun, User, Zap } from "lucide-react";
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { StandardPage } from "../components/StandardPage";
-import { SectionHeader, StandardCard, Button } from "../components/ui";
-import { ThemeToggle } from "../components";
-import {
-  Settings as SettingsIcon,
-  User,
-  Bell,
-  Lock,
-  Globe,
-  Zap,
-  Eye,
-  HelpCircle,
-  CheckCircle,
-  Phone,
-  Moon,
-  Sun,
-  AlertTriangle,
-} from "lucide-react";
-import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
-import { Switch } from "../components/ui/switch";
+import { Button, SectionHeader, StandardCard } from "../components/ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { Avatar, AvatarImage } from "../components/ui/avatar";
+import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group";
-import { Input } from "../components/ui/input";
-import { Avatar, AvatarImage } from "../components/ui/avatar";
-import toast from "react-hot-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../components/ui/alert-dialog";
+import { Switch } from "../components/ui/switch";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 const Settings: React.FC = () => {
   const { theme, setTheme } = useTheme();

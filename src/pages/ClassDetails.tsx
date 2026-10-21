@@ -1,29 +1,19 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useClasses } from "../context/ClassContext";
-import { getClassById, Class } from "../lib/classService";
+import { format, parseISO } from "date-fns";
+import { ArrowLeft, Calendar as CalendarIcon, CheckCircle, Clock, Dumbbell, MapPin, User, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate, useParams } from "react-router-dom";
+import { ClassCancelModal } from "../components/ClassCancelModal";
+import { PageContainer } from "../components/Layout";
+import { MainLayout } from "../components/Layout/MainLayout";
+import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Separator } from "../components/ui/separator";
 import { Progress } from "../components/ui/progress";
-import { MainLayout } from "../components/Layout/MainLayout";
-import { PageContainer } from "../components/Layout";
-import { ClassCancelModal } from "../components/ClassCancelModal";
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  MapPin, 
-  Users, 
-  Dumbbell, 
-  User,
-  ArrowLeft,
-  CheckCircle
-} from "lucide-react";
-import { format, parseISO } from "date-fns";
-import { cn } from "../lib/utils";
-import toast from "react-hot-toast";
+import { Separator } from "../components/ui/separator";
+import { useAuth } from "../context/AuthContext";
+import { useClasses } from "../context/ClassContext";
+import { Class, getClassById } from "../lib/classService";
 
 export default function ClassDetails() {
   const { id } = useParams<{ id: string }>();
@@ -332,4 +322,4 @@ export default function ClassDetails() {
       </PageContainer>
     </MainLayout>
   );
-} 
+}

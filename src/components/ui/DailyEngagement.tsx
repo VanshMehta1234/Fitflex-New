@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
+import { useState } from 'react';
 import { Button } from '../ui/button';
-import { useXp } from '../../context/XpContext';
+import { Card, CardContent, CardHeader, CardTitle } from './card';
 
 export function DailyEngagement() {
-  const { earnXp } = useXp();
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -58,7 +56,7 @@ export function DailyEngagement() {
     return completedTasks.includes(taskId);
   };
   
-  const handleCompleteTask = async (taskId: string, xpAmount: number) => {
+  const handleCompleteTask = async (taskId: string) => {
     if (isTaskCompleted(taskId)) return;
     
     setIsLoading(true);
@@ -108,7 +106,7 @@ export function DailyEngagement() {
                   <Button
                     size="sm"
                     variant={isTaskCompleted(task.id) ? "outline" : "default"}
-                    onClick={() => handleCompleteTask(task.id, task.xp)}
+                    onClick={() => handleCompleteTask(task.id)}
                     disabled={isTaskCompleted(task.id) || isLoading}
                     className={isTaskCompleted(task.id) ? "border-green-200 text-green-700 dark:border-green-800 dark:text-green-400" : ""}
                   >
@@ -157,4 +155,4 @@ export function DailyEngagement() {
       </Card>
     </div>
   );
-} 
+}

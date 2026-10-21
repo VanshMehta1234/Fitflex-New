@@ -1,41 +1,16 @@
-import { useState, useEffect } from "react";
+import { BarChart3, Building, CalendarDays, Check, Clock, Dumbbell, MessageSquare, Sparkles, Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { MainLayout } from "../components/Layout/MainLayout";
-import { Button } from "../components/ui/button";
-import { Textarea } from "../components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "../components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { Label } from "../components/ui/label";
 import { Skeleton } from "../components/ui/skeleton";
 import { Switch } from "../components/ui/switch";
-import { Label } from "../components/ui/label";
-import {
-  MessageSquare,
-  Check,
-  Star,
-  Sparkles,
-  BarChart3,
-  Building,
-  Dumbbell,
-  CalendarDays,
-  Clock,
-  ChevronRight,
-} from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+import { Textarea } from "../components/ui/textarea";
 import { useFeedback, WeeklyFeedbackData } from "../context/FeedbackContext";
-import toast from "react-hot-toast";
 import { cn } from "../lib/utils";
-import React from "react";
 
 // Categories for the weekly feedback
 const FEEDBACK_CATEGORIES = [
@@ -122,7 +97,7 @@ export default function WeeklyFeedback() {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [hasAnyRating, setHasAnyRating] = useState(false);
-  const [currentWeek, setCurrentWeek] = useState(() => {
+  const [currentWeek] = useState(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 1);
     const diff = now.getTime() - start.getTime();
@@ -467,4 +442,4 @@ export default function WeeklyFeedback() {
       </div>
     </MainLayout>
   );
-} 
+}
