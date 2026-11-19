@@ -5,6 +5,13 @@ import { getUserProfile, profileCache, ProfileUpdateData, updateUserProfile } fr
 import { supabase } from '../supabase';
 import { AppUser, ExtendedUser } from '../types/user';
 
+// Shared demo account: visitors without a session are signed in as this
+// account so they can explore the app without registering. Credentials are
+// intentionally public dummy credentials for a demo-only account with fake
+// data. Can be overridden via REACT_APP_DEMO_EMAIL / REACT_APP_DEMO_PASSWORD.
+const DEMO_EMAIL = process.env.REACT_APP_DEMO_EMAIL || 'mehta4028@gmail.com';
+const DEMO_PASSWORD = process.env.REACT_APP_DEMO_PASSWORD || 'Test@123';
+
 // Moved createUserProfile outside the component for stability
 const createUserProfile = async (userId: string, role: UserRole = 'user') => {
   try {
@@ -187,8 +194,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get session on mount; when there is none and demo credentials are
+    // configured, sign visitors in as the shared demo account so they can
+    // explore without registering. If demo sign-in fails, fall back to the
+    // normal logged-out flow (login page).
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session && DEMO_EMAIL && DEMO_PASSWORD) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD,
+        });
+        if (!error) {
+          // onAuthStateChange handles the new session
+          return;
+        }
+        console.error('Demo sign-in failed:', error.message);
+      }
       handleAuthChange(session);
     });
 
@@ -308,6 +329,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userId) {
       toast.error('You must be logged in to delete your account');
       return { error: new Error('User not authenticated') };
+    }
+    if (user?.email && DEMO_EMAIL && user.email === DEMO_EMAIL) {
+      toast.error('The demo account cannot be deleted.');
+      return { error: new Error('Demo account cannot be deleted') };
     }
     
     try {
