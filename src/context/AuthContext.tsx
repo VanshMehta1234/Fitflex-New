@@ -367,7 +367,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Error deleting account:', error);
       return { error };
     }
-  }, [userId]);
+  }, [userId, user?.email]);
 
   const value = useMemo(() => ({
     session,
